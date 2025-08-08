@@ -73,9 +73,16 @@ const Index = () => {
         
         <div className="relative z-10 text-center max-w-2xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-6xl font-bold mb-4 bg-gradient-primary bg-clip-text text-transparent">
-              🚀 TechPro
-            </h1>
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <img 
+                src="/lovable-uploads/6614bc9a-4958-418f-ab60-8b2f9537cb29.png" 
+                alt="TechPro Logo" 
+                className="h-16 w-auto"
+              />
+              <h1 className="text-6xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                TechPro
+              </h1>
+            </div>
             <p className="text-xl text-muted-foreground mb-8">
               All-in-One Skill-Sharing & Learning Platform
             </p>
@@ -130,9 +137,16 @@ const Index = () => {
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                TechPro Dashboard
-              </h1>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/lovable-uploads/6614bc9a-4958-418f-ab60-8b2f9537cb29.png" 
+                  alt="TechPro Logo" 
+                  className="h-10 w-auto"
+                />
+                <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  TechPro Dashboard
+                </h1>
+              </div>
               <p className="text-muted-foreground mt-2">
                 Welcome back, {user.email}
               </p>

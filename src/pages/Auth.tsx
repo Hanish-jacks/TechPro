@@ -47,9 +47,16 @@ export default function Auth() {
       
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
-            🚀 TechPro
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <img 
+              src="/lovable-uploads/6614bc9a-4958-418f-ab60-8b2f9537cb29.png" 
+              alt="TechPro Logo" 
+              className="h-12 w-auto"
+            />
+            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              TechPro
+            </h1>
+          </div>
           <p className="text-muted-foreground">
             All-in-One Skill-Sharing & Learning Platform
           </p>
