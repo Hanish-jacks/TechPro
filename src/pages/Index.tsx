@@ -77,7 +77,7 @@ const Index = () => {
               <img 
                 src="/lovable-uploads/19794bde-56d5-4eb5-9583-17042d97b0af.png" 
                 alt="TechPro Logo" 
-                className="h-16 w-auto"
+                className="h-24 w-auto"
               />
               <h1 className="text-6xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 TechPro
@@ -141,7 +141,7 @@ const Index = () => {
                 <img 
                   src="/lovable-uploads/19794bde-56d5-4eb5-9583-17042d97b0af.png" 
                   alt="TechPro Logo" 
-                  className="h-10 w-auto"
+                  className="h-14 w-auto"
                 />
                 <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                   TechPro Dashboard
