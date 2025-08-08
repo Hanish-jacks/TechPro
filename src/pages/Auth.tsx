@@ -48,10 +48,10 @@ export default function Auth() {
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
-            DuskWatch
+            🚀 TechPro
           </h1>
           <p className="text-muted-foreground">
-            Your secure authentication hub
+            All-in-One Skill-Sharing & Learning Platform
           </p>
         </div>
         

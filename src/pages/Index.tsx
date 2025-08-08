@@ -74,18 +74,18 @@ const Index = () => {
         <div className="relative z-10 text-center max-w-2xl mx-auto">
           <div className="mb-8">
             <h1 className="text-6xl font-bold mb-4 bg-gradient-primary bg-clip-text text-transparent">
-              DuskWatch
+              🚀 TechPro
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-              Your secure authentication hub
+              All-in-One Skill-Sharing & Learning Platform
             </p>
           </div>
           
           <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
             <CardHeader>
-              <CardTitle className="text-2xl">Welcome to DuskWatch</CardTitle>
+              <CardTitle className="text-2xl">Welcome to TechPro</CardTitle>
               <CardDescription>
-                A secure, modern authentication platform built with cutting-edge technology
+                Your all-in-one skill-sharing and learning platform built with cutting-edge technology
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -131,7 +131,7 @@ const Index = () => {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                DuskWatch Dashboard
+                TechPro Dashboard
               </h1>
               <p className="text-muted-foreground mt-2">
                 Welcome back, {user.email}
