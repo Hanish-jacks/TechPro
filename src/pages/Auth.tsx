@@ -49,7 +49,7 @@ export default function Auth() {
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <img 
-              src="/lovable-uploads/69a82713-7f2d-4b0b-a13f-b6493264ea26.png" 
+              src="/lovable-uploads/19794bde-56d5-4eb5-9583-17042d97b0af.png" 
               alt="TechPro Logo" 
               className="h-12 w-auto"
             />
