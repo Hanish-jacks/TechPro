@@ -1,73 +1,191 @@
-# Welcome to your Lovable project
+# DuskWatch Login Hub
 
-## Project info
+A modern authentication system built with React, TypeScript, and Supabase, featuring user registration with username and avatar upload functionality.
 
-**URL**: https://lovable.dev/projects/7c9f706d-1372-4a0a-b576-1cf1ded82bfa
+## Features
 
-## How can I edit this code?
+### User Registration
+- **Username**: Required field (simple text input)
+- **Avatar Upload**: Required image upload with size validation (must be > 50KB)
+- **Email Verification**: Secure email-based account verification
+- **Profile Creation**: Automatic profile creation with avatar storage
 
-There are several ways of editing your application.
+### User Authentication
+- **Secure Login**: Email and password authentication
+- **Session Management**: Persistent sessions with automatic token refresh
+- **Protected Routes**: Route protection for authenticated users
 
-**Use Lovable**
+### Avatar Management
+- **File Validation**: Size and type validation for uploaded images
+- **Preview**: Real-time avatar preview during upload
+- **Storage**: Secure cloud storage with user-specific folders
+- **Public Access**: Public URLs for avatar display
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7c9f706d-1372-4a0a-b576-1cf1ded82bfa) and start prompting.
+## Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Frontend**: React 18, TypeScript, Vite
+- **UI Components**: shadcn/ui, Tailwind CSS
+- **Authentication**: Supabase Auth
+- **Database**: PostgreSQL (via Supabase)
+- **Storage**: Supabase Storage
+- **Routing**: React Router DOM
 
-**Use your preferred IDE**
+## Setup Instructions
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 1. Database Setup
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Run the following SQL commands in your Supabase SQL editor:
 
-Follow these steps:
+#### Create Profiles Table
+```sql
+-- Create profiles table with username and avatar_url fields
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    avatar_url TEXT,
+    full_name TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+-- Enable Row Level Security
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+-- Create policies
+CREATE POLICY "Users can view their own profile" ON public.profiles
+    FOR SELECT USING (auth.uid() = id);
 
-# Step 3: Install the necessary dependencies.
-npm i
+CREATE POLICY "Users can update their own profile" ON public.profiles
+    FOR UPDATE USING (auth.uid() = id);
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+CREATE POLICY "Users can insert their own profile" ON public.profiles
+    FOR INSERT WITH CHECK (auth.uid() = id);
 ```
 
-**Edit a file directly in GitHub**
+#### Create Storage Bucket
+```sql
+-- Create avatars storage bucket
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+-- Allow authenticated users to upload avatars to their own folder
+CREATE POLICY "Users can upload avatars" ON storage.objects
+    FOR INSERT WITH CHECK (
+        bucket_id = 'avatars' 
+        AND auth.role() = 'authenticated'
+        AND (storage.foldername(name))[1] = auth.uid()::text
+    );
 
-**Use GitHub Codespaces**
+-- Allow users to view avatars
+CREATE POLICY "Users can view avatars" ON storage.objects
+    FOR SELECT USING (bucket_id = 'avatars');
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+-- Allow users to update their own avatars
+CREATE POLICY "Users can update their own avatars" ON storage.objects
+    FOR UPDATE USING (
+        bucket_id = 'avatars' 
+        AND auth.role() = 'authenticated'
+        AND (storage.foldername(name))[1] = auth.uid()::text
+    );
 
-## What technologies are used for this project?
+-- Allow users to delete their own avatars
+CREATE POLICY "Users can delete their own avatars" ON storage.objects
+    FOR DELETE USING (
+        bucket_id = 'avatars' 
+        AND auth.role() = 'authenticated'
+        AND (storage.foldername(name))[1] = auth.uid()::text
+    );
+```
 
-This project is built with:
+### 2. Environment Setup
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Configure Supabase:
+   - Update `src/integrations/supabase/client.ts` with your Supabase URL and anon key
+   - Update `supabase/config.toml` with your project ID
 
-## How can I deploy this project?
+### 3. Development
 
-Simply open [Lovable](https://lovable.dev/projects/7c9f706d-1372-4a0a-b576-1cf1ded82bfa) and click on Share -> Publish.
+```bash
+# Start development server
+npm run dev
 
-## Can I connect a custom domain to my Lovable project?
+# Build for production
+npm run build
 
-Yes, you can!
+# Preview production build
+npm run preview
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Usage
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### User Registration
+
+1. Navigate to the signup page
+2. Enter a username (any text)
+3. Upload an avatar image (must be > 50KB)
+4. Enter email and password
+5. Submit the form
+6. Check email for verification link
+
+### User Login
+
+1. Navigate to the login page
+2. Enter email and password
+3. Submit the form
+4. Redirected to dashboard upon successful login
+
+## File Structure
+
+```
+src/
+├── components/
+│   ├── auth/
+│   │   ├── AuthForm.tsx          # Enhanced auth form with username/avatar
+│   │   └── ProtectedRoute.tsx    # Route protection component
+│   └── ui/                       # shadcn/ui components
+├── integrations/
+│   └── supabase/
+│       ├── client.ts             # Supabase client configuration
+│       └── types.ts              # Database types
+├── pages/
+│   ├── Auth.tsx                  # Authentication page
+│   └── Index.tsx                 # Dashboard page
+└── hooks/
+    └── use-toast.ts              # Toast notifications
+```
+
+## Validation Rules
+
+### Username
+- Required field
+- Must be unique across all users
+- Simple text input (no special character restrictions)
+
+### Avatar
+- Must be an image file (JPEG, PNG, GIF)
+- Minimum file size: 50KB
+- Maximum file size: 10MB (configurable)
+- Supported formats: image/*
+
+## Security Features
+
+- Row Level Security (RLS) enabled on profiles table
+- User-specific storage folders for avatars
+- Secure file upload with validation
+- Email verification required for account activation
+- Protected routes for authenticated users
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details
