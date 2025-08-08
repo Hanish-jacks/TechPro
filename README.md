@@ -101,8 +101,10 @@ CREATE POLICY "Users can delete their own avatars" ON storage.objects
 ### 2. Environment Setup
 
 1. Clone the repository
-2. Install dependencies: `npm install`
-3. Configure Supabase:
+2. Then cd<project>
+3. npm i
+4. for run(npm run dev)
+5. Configure Supabase:
    - Update `src/integrations/supabase/client.ts` with your Supabase URL and anon key
    - Update `supabase/config.toml` with your project ID
 
