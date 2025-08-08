@@ -75,7 +75,7 @@ const Index = () => {
           <div className="mb-8">
             <div className="flex items-center justify-center gap-4 mb-4">
               <img 
-                src="/lovable-uploads/6614bc9a-4958-418f-ab60-8b2f9537cb29.png" 
+                src="/lovable-uploads/69a82713-7f2d-4b0b-a13f-b6493264ea26.png" 
                 alt="TechPro Logo" 
                 className="h-16 w-auto"
               />
@@ -139,7 +139,7 @@ const Index = () => {
             <div>
               <div className="flex items-center gap-3">
                 <img 
-                  src="/lovable-uploads/6614bc9a-4958-418f-ab60-8b2f9537cb29.png" 
+                  src="/lovable-uploads/69a82713-7f2d-4b0b-a13f-b6493264ea26.png" 
                   alt="TechPro Logo" 
                   className="h-10 w-auto"
                 />
