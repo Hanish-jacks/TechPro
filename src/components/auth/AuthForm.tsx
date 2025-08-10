@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import { Loader2, Mail, Lock, User, Upload, X } from "lucide-react";
+import SocialAuth from "@/components/auth/SocialAuth";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthFormProps {
@@ -249,6 +251,14 @@ export default function AuthForm({ mode, onToggleMode }: AuthFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="space-y-4">
+          <SocialAuth />
+          <div className="flex items-center gap-2">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">or continue with email</span>
+            <Separator className="flex-1" />
+          </div>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "signup" && (
             <>
