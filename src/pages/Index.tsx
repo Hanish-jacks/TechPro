@@ -6,6 +6,9 @@ import { User, Session } from "@supabase/supabase-js";
 import { LogOut, User as UserIcon, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import PostComposer from "@/components/feed/PostComposer";
+import PostList from "@/components/feed/PostList";
+import ChatDrawer from "@/components/chat/ChatDrawer";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -34,6 +37,27 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // SEO: Title and meta description
+  useEffect(() => {
+    document.title = "TechPro Feed & Chats | Dashboard";
+    const desc = "TechPro social feed: posts, images, and chats dashboard.";
+    let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "description";
+      document.head.appendChild(meta);
+    }
+    meta.content = desc;
+
+    // canonical
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "canonical";
+      document.head.appendChild(link);
+    }
+    link.href = window.location.href;
+  }, []);
   const handleSignOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -161,51 +185,78 @@ const Index = () => {
             </Button>
           </div>
 
-          {/* Dashboard Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserIcon className="h-5 w-5 text-primary" />
-                  Profile
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <p><span className="font-medium">Email:</span> {user.email}</p>
-                  <p><span className="font-medium">User ID:</span> {user.id}</p>
-                  <p><span className="font-medium">Created:</span> {new Date(user.created_at).toLocaleDateString()}</p>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Dashboard Content - Social layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Left sidebar */}
+            <div className="space-y-4">
+              <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UserIcon className="h-5 w-5 text-primary" />
+                    Profile
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <p><span className="font-medium">Email:</span> {user.email}</p>
+                    <p><span className="font-medium">User ID:</span> {user.id}</p>
+                    <p><span className="font-medium">Created:</span> {new Date(user.created_at).toLocaleDateString()}</p>
+                  </div>
+                </CardContent>
+              </Card>
 
-            <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  Security
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <p><span className="font-medium">Session:</span> Active</p>
-                  <p><span className="font-medium">Last Sign In:</span> {new Date(user.last_sign_in_at || '').toLocaleDateString()}</p>
-                  <p><span className="font-medium">Provider:</span> Email</p>
-                </div>
-              </CardContent>
-            </Card>
+              <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
+                <CardHeader>
+                  <CardTitle>Shortcuts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li>• My Network</li>
+                    <li>• Saved</li>
+                    <li>• Groups</li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
-              <CardHeader>
-                <CardTitle>Welcome</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  You're successfully authenticated! Your session is secure and ready to use.
-                </p>
-              </CardContent>
-            </Card>
+            {/* Center feed */}
+            <div className="lg:col-span-2 space-y-4">
+              <PostComposer userId={user.id} />
+              <PostList />
+            </div>
+
+            {/* Right sidebar */}
+            <div className="space-y-4">
+              <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Chats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3">Real-time messaging coming soon.</p>
+                  <p className="text-xs text-muted-foreground">Use the chat button to start a conversation.</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
+                <CardHeader>
+                  <CardTitle>Who to follow</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li>• Product Designers</li>
+                    <li>• Frontend Engineers</li>
+                    <li>• Data Scientists</li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
           </div>
+
+          {/* Floating Chat */}
+          <ChatDrawer />
         </div>
       </div>
     </div>

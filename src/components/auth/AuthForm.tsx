@@ -124,11 +124,11 @@ export default function AuthForm({ mode, onToggleMode }: AuthFormProps) {
         // Check if username is already taken (only if profiles table exists)
         let usernameExists = false;
         try {
-          const { data: existingUser, error: checkError } = await supabase
+          const { data: existingUser, error: checkError } = await (supabase as any)
             .from('profiles')
-            .select('username')
-            .eq('username', username.trim())
-            .single();
+            .select('id')
+            .eq('full_name', username.trim())
+            .maybeSingle();
 
           if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" error
             console.error('Error checking username:', checkError);
@@ -176,12 +176,10 @@ export default function AuthForm({ mode, onToggleMode }: AuthFormProps) {
 
           // Create profile (only if profiles table exists)
           try {
-            const { error: profileError } = await supabase
+            const { error: profileError } = await (supabase as any)
               .from('profiles')
               .insert({
                 id: user.id,
-                username: username.trim(),
-                avatar_url: avatarUrl,
                 full_name: username.trim()
               });
 
