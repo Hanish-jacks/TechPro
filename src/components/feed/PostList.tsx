@@ -1,10 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Heart, Share2, MoreHorizontal } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import CommentsSection from "./CommentsSection";
 
 interface Post {
   id: string;
@@ -16,16 +18,71 @@ interface Post {
 }
 
 export default function PostList() {
+  const queryClient = useQueryClient();
+  const [openCommentsPostId, setOpenCommentsPostId] = useState<string | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ["posts"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data: posts, error } = await (supabase as any)
         .from("posts")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return (data as Post[]) || [];
+      const list = (posts as Post[]) || [];
+      const ids = list.map((p) => p.id);
+
+      const [{ data: auth }, { data: likeCounts }, { data: commentCounts }] = await Promise.all([
+        supabase.auth.getUser(),
+        (supabase as any).from("post_like_counts").select("*").in("post_id", ids),
+        (supabase as any).from("post_comment_counts").select("*").in("post_id", ids),
+      ]);
+
+      const likeMap = new Map<string, number>((likeCounts || []).map((r: any) => [r.post_id, Number(r.like_count) || 0]));
+      const commentMap = new Map<string, number>((commentCounts || []).map((r: any) => [r.post_id, Number(r.comment_count) || 0]));
+
+      let likedSet = new Set<string>();
+      const user = auth?.user;
+      if (user && ids.length) {
+        const { data: likedRows } = await (supabase as any)
+          .from("post_likes")
+          .select("post_id")
+          .eq("user_id", user.id)
+          .in("post_id", ids);
+        likedSet = new Set((likedRows || []).map((r: any) => r.post_id));
+      }
+
+      return list.map((p) => ({
+        ...p,
+        likeCount: likeMap.get(p.id) || 0,
+        commentCount: commentMap.get(p.id) || 0,
+        likedByUser: likedSet.has(p.id),
+      }));
+    },
+  });
+
+  const toggleLike = useMutation({
+    mutationFn: async ({ postId, liked }: { postId: string; liked: boolean }) => {
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth?.user;
+      if (!user) throw new Error("Please sign in to like posts.");
+      if (liked) {
+        const { error } = await (supabase as any)
+          .from("post_likes")
+          .delete()
+          .eq("post_id", postId)
+          .eq("user_id", user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any)
+          .from("post_likes")
+          .insert({ post_id: postId, user_id: user.id });
+        if (error) throw error;
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
   });
 
@@ -97,19 +154,31 @@ export default function PostList() {
               )}
 
               <div className="flex items-center gap-4 pt-2 text-muted-foreground">
-                <button className="flex items-center gap-1 hover:text-primary transition-colors">
-                  <Heart className="h-4 w-4" />
-                  <span className="text-xs">Like</span>
+                <button
+                  className={`flex items-center gap-1 hover:text-primary transition-colors ${
+                    (post as any).likedByUser ? "text-primary" : ""
+                  }`}
+                  onClick={() => toggleLike.mutate({ postId: post.id, liked: (post as any).likedByUser })}
+                >
+                  <Heart className={`h-4 w-4 ${ (post as any).likedByUser ? "fill-current" : "" }`} />
+                  <span className="text-xs">{(post as any).likeCount}</span>
                 </button>
-                <button className="flex items-center gap-1 hover:text-primary transition-colors">
+                <button
+                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                  onClick={() => setOpenCommentsPostId(openCommentsPostId === post.id ? null : post.id)}
+                >
                   <MessageCircle className="h-4 w-4" />
-                  <span className="text-xs">Comment</span>
+                  <span className="text-xs">{(post as any).commentCount}</span>
                 </button>
                 <button className="flex items-center gap-1 hover:text-primary transition-colors">
                   <Share2 className="h-4 w-4" />
                   <span className="text-xs">Share</span>
                 </button>
               </div>
+
+              {openCommentsPostId === post.id && (
+                <CommentsSection postId={post.id} />
+              )}
             </CardContent>
           </Card>
         );
