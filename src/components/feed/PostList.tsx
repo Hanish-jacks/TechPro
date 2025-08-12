@@ -80,9 +80,55 @@ export default function PostList() {
           .insert({ post_id: postId, user_id: user.id });
         if (error) throw error;
       }
+      return { postId, liked };
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["posts"] });
+    onMutate: async ({ postId, liked }) => {
+      await queryClient.cancelQueries({ queryKey: ["posts"] });
+      const previous = queryClient.getQueryData<any[]>(["posts"]);
+      queryClient.setQueryData<any[]>(["posts"], (old) => {
+        if (!old) return old as any;
+        return old.map((p: any) => {
+          if (p.id !== postId) return p;
+          const newLiked = !liked;
+          const delta = newLiked ? 1 : -1;
+          return { ...p, likedByUser: newLiked, likeCount: Math.max(0, (p.likeCount || 0) + delta) };
+        });
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if ((context as any)?.previous) {
+        queryClient.setQueryData(["posts"], (context as any).previous);
+      }
+    },
+    onSettled: async (_data, _error, variables) => {
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        const userId = auth?.user?.id;
+        if (!userId || !variables?.postId) return;
+        const [likeCountResp, likedResp] = await Promise.all([
+          (supabase as any)
+            .from("post_like_counts")
+            .select("*")
+            .eq("post_id", variables.postId)
+            .maybeSingle(),
+          (supabase as any)
+            .from("post_likes")
+            .select("post_id")
+            .eq("user_id", userId)
+            .eq("post_id", variables.postId),
+        ]);
+        const likeCount = Number(likeCountResp?.data?.like_count || 0);
+        const likedByUser = Array.isArray(likedResp?.data) && likedResp.data.length > 0;
+        queryClient.setQueryData<any[]>(["posts"], (old) => {
+          if (!old) return old as any;
+          return old.map((p: any) =>
+            p.id === variables.postId ? { ...p, likeCount, likedByUser } : p
+          );
+        });
+      } catch {
+        // no-op: UI already updated optimistically; will reconcile on next refresh
+      }
     },
   });
 
