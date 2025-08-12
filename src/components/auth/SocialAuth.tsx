@@ -2,32 +2,42 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Github, Linkedin, Globe, UserCircle, Loader2 } from "lucide-react";
+import { Github, Globe, Loader2 } from "lucide-react";
 
 export default function SocialAuth() {
   const { toast } = useToast();
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
   const providers: Array<{
-    id: "google" | "github" | "linkedin_oidc" | "facebook";
+    id: "google" | "github";
     label: string;
     Icon: any;
   }> = [
     { id: "google", label: "Continue with Google", Icon: Globe },
     { id: "github", label: "Continue with GitHub", Icon: Github },
-    { id: "linkedin_oidc", label: "Continue with LinkedIn", Icon: Linkedin },
-    { id: "facebook", label: "Continue with Facebook", Icon: UserCircle },
   ];
 
   const handleOAuthLogin = async (
-    provider: "google" | "github" | "linkedin_oidc" | "facebook"
+    provider: "google" | "github"
   ) => {
     try {
       setLoadingProvider(provider);
       const redirectTo = `${window.location.origin}/`;
+      
+      // Provider-specific query parameters
+      const queryParams: any = {};
+      
+      if (provider === 'github') {
+        queryParams.access_type = 'offline';
+        queryParams.prompt = 'consent';
+      }
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider as any,
-        options: { redirectTo },
+        options: { 
+          redirectTo,
+          queryParams
+        },
       });
       if (error) throw error;
     } catch (error: any) {

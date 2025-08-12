@@ -1,25 +1,5 @@
--- Create profiles table with username and avatar_url fields
-CREATE TABLE IF NOT EXISTS public.profiles (
-    id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-    username TEXT UNIQUE NOT NULL,
-    avatar_url TEXT,
-    full_name TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Enable Row Level Security
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
--- Create policies
-CREATE POLICY "Users can view their own profile" ON public.profiles
-    FOR SELECT USING (auth.uid() = id);
-
-CREATE POLICY "Users can update their own profile" ON public.profiles
-    FOR UPDATE USING (auth.uid() = id);
-
-CREATE POLICY "Users can insert their own profile" ON public.profiles
-    FOR INSERT WITH CHECK (auth.uid() = id);
+-- Enhanced OAuth profile handling
+-- This migration updates the handle_new_user function to better handle OAuth users
 
 -- Create function to handle new user signup (enhanced for OAuth)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -50,6 +30,33 @@ BEGIN
                 NEW.raw_user_meta_data->>'name',
                 username_value
             );
+        ELSIF NEW.raw_user_meta_data->>'provider' = 'linkedin_oidc' THEN
+            -- Use LinkedIn profile data if available
+            username_value := COALESCE(
+                NEW.raw_user_meta_data->>'preferred_username',
+                NEW.raw_user_meta_data->>'given_name',
+                NEW.raw_user_meta_data->>'name',
+                'linkedin_user_' || substr(NEW.id::text, 1, 8)
+            );
+            avatar_url_value := NEW.raw_user_meta_data->>'picture';
+            full_name_value := COALESCE(
+                NEW.raw_user_meta_data->>'name',
+                NEW.raw_user_meta_data->>'given_name' || ' ' || NEW.raw_user_meta_data->>'family_name',
+                username_value
+            );
+        ELSIF NEW.raw_user_meta_data->>'provider' = 'facebook' THEN
+            -- Use Facebook profile data if available
+            username_value := COALESCE(
+                NEW.raw_user_meta_data->>'name',
+                NEW.raw_user_meta_data->>'first_name',
+                'facebook_user_' || substr(NEW.id::text, 1, 8)
+            );
+            avatar_url_value := NEW.raw_user_meta_data->>'picture';
+            full_name_value := COALESCE(
+                NEW.raw_user_meta_data->>'name',
+                NEW.raw_user_meta_data->>'first_name' || ' ' || NEW.raw_user_meta_data->>'last_name',
+                username_value
+            );
         ELSE
             -- Other OAuth providers or fallback
             username_value := COALESCE(
@@ -77,9 +84,3 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Create trigger for new user signup
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
