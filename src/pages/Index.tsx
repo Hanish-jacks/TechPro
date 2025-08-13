@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import PostComposer from "@/components/feed/PostComposer";
 import PostList from "@/components/feed/PostList";
 import ChatDrawer from "@/components/chat/ChatDrawer";
+import SearchBar from "@/components/search/SearchBar";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -159,7 +160,7 @@ const Index = () => {
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
             <div>
               <div className="flex items-center gap-3">
                 <img 
@@ -175,14 +176,18 @@ const Index = () => {
                 Welcome back, {user.email}
               </p>
             </div>
-            <Button 
-              onClick={handleSignOut}
-              variant="outline"
-              className="border-border/50 hover:bg-destructive hover:text-destructive-foreground"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
+            
+            <div className="flex items-center gap-4 w-full lg:w-auto">
+              <SearchBar />
+              <Button 
+                onClick={handleSignOut}
+                variant="outline"
+                className="border-border/50 hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
 
           {/* Dashboard Content - Social layout */}
@@ -202,6 +207,14 @@ const Index = () => {
                     <p><span className="font-medium">User ID:</span> {user.id}</p>
                     <p><span className="font-medium">Created:</span> {new Date(user.created_at).toLocaleDateString()}</p>
                   </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mt-4"
+                    onClick={() => navigate("/profile/me")}
+                  >
+                    View My Profile
+                  </Button>
                 </CardContent>
               </Card>
 

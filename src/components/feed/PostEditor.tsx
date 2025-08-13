@@ -1,24 +1,34 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, Send, Loader2, X } from "lucide-react";
+import { Image as ImageIcon, Send, Loader2, X, Edit3 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ImageViewer from "@/components/ui/image-viewer";
 
-interface PostComposerProps {
+interface PostEditorProps {
+  post: {
+    id: string;
+    content: string;
+    image_url?: string | null;
+    image_urls?: string[] | null;
+  };
   userId: string;
+  onCancel: () => void;
 }
 
-export default function PostComposer({ userId }: PostComposerProps) {
+export default function PostEditor({ post, userId, onCancel }: PostEditorProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(post.content);
   const [files, setFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
+  const [previews, setPreviews] = useState<string[]>(
+    post.image_urls || (post.image_url ? [post.image_url] : [])
+  );
+  const [isNewImage, setIsNewImage] = useState(false);
   const [imageViewer, setImageViewer] = useState<{
     isOpen: boolean;
     images: string[];
@@ -46,13 +56,6 @@ export default function PostComposer({ userId }: PostComposerProps) {
     });
   };
 
-  const resetForm = () => {
-    setContent("");
-    setFiles([]);
-    setPreviews([]);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
   const uploadImages = async (images: File[]): Promise<string[]> => {
     const uploadPromises = images.map(async (image) => {
       const path = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}-${image.name}`;
@@ -69,48 +72,106 @@ export default function PostComposer({ userId }: PostComposerProps) {
     return Promise.all(uploadPromises);
   };
 
-  const createPost = useMutation({
+  const updatePost = useMutation({
     mutationFn: async () => {
-      if (!content.trim() && files.length === 0) {
+      if (!content.trim() && files.length === 0 && previews.length === 0) {
         throw new Error("Write something or add an image to post.");
       }
 
-      let image_urls: string[] | undefined;
+      let image_urls: string[] = [];
+      
+      // Keep existing images that weren't removed
+      const existingImages = previews.filter(preview => 
+        !preview.startsWith('blob:') && 
+        (post.image_urls?.includes(preview) || post.image_url === preview)
+      );
+      image_urls.push(...existingImages);
+      
+      // Upload new files
       if (files.length > 0) {
-        image_urls = await uploadImages(files);
+        const newImageUrls = await uploadImages(files);
+        image_urls.push(...newImageUrls);
       }
 
       const { error } = await (supabase as any)
         .from("posts")
-        .insert({ 
-          user_id: userId, 
+        .update({ 
           content: content.trim(), 
-          image_urls: image_urls || []
-        });
+          image_urls: image_urls.length > 0 ? image_urls : null,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", post.id)
+        .eq("user_id", userId);
 
       if (error) throw error;
     },
     onSuccess: async () => {
-      resetForm();
       await queryClient.invalidateQueries({ queryKey: ["posts"] });
-      toast({ title: "Posted", description: "Your update is live." });
+      toast({ title: "Post updated", description: "Your post has been updated successfully." });
+      onCancel();
     },
     onError: (err: any) => {
       toast({
-        title: "Post failed",
+        title: "Update failed",
         description: err?.message || "Please try again",
         variant: "destructive",
       });
     },
   });
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length > 0) {
+      const newFiles = [...files, ...selectedFiles];
+      const newPreviews = [...previews, ...selectedFiles.map(file => URL.createObjectURL(file))];
+      setFiles(newFiles);
+      setPreviews(newPreviews);
+      setIsNewImage(true);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const newFiles = files.filter((_, i) => i !== index);
+    const newPreviews = previews.filter((_, i) => i !== index);
+    setFiles(newFiles);
+    setPreviews(newPreviews);
+    setIsNewImage(false);
+  };
+
+  const handleCancel = () => {
+    // Clean up any created object URLs
+    previews.forEach((preview, index) => {
+      if (preview.startsWith('blob:')) {
+        URL.revokeObjectURL(preview);
+      }
+    });
+    onCancel();
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      previews.forEach((preview) => {
+        if (preview.startsWith('blob:')) {
+          URL.revokeObjectURL(preview);
+        }
+      });
+    };
+  }, [previews]);
+
   return (
     <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
       <CardContent className="p-4 space-y-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Edit3 className="h-4 w-4" />
+          Editing post
+        </div>
+        
         <Textarea
           placeholder="Share your thoughts..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          className="min-h-[100px]"
         />
 
         {previews.length > 0 && (
@@ -119,7 +180,7 @@ export default function PostComposer({ userId }: PostComposerProps) {
               <div key={index} className="relative">
                 <img
                   src={preview}
-                  alt={`Selected post image preview ${index + 1}`}
+                  alt={`Post image preview ${index + 1}`}
                   loading="lazy"
                   className="rounded-md w-full object-cover h-32 cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => openImageViewer(previews, index)}
@@ -129,12 +190,7 @@ export default function PostComposer({ userId }: PostComposerProps) {
                   size="icon"
                   variant="secondary"
                   className="absolute top-1 right-1 h-6 w-6"
-                  onClick={() => {
-                    const newFiles = files.filter((_, i) => i !== index);
-                    const newPreviews = previews.filter((_, i) => i !== index);
-                    setFiles(newFiles);
-                    setPreviews(newPreviews);
-                  }}
+                  onClick={() => removeImage(index)}
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -150,45 +206,47 @@ export default function PostComposer({ userId }: PostComposerProps) {
               accept="image/*"
               multiple
               ref={fileInputRef}
-              onChange={(e) => {
-                const selectedFiles = Array.from(e.target.files || []);
-                if (selectedFiles.length > 0) {
-                  const newFiles = [...files, ...selectedFiles];
-                  const newPreviews = [...previews, ...selectedFiles.map(file => URL.createObjectURL(file))];
-                  setFiles(newFiles);
-                  setPreviews(newPreviews);
-                }
-              }}
+              onChange={handleImageChange}
               className="hidden"
             />
             <Button
               type="button"
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
-              disabled={files.length >= 10}
+              disabled={previews.length >= 10}
             >
               <ImageIcon className="h-4 w-4 mr-2" />
-              Add images ({files.length}/10)
+              Add images ({previews.length}/10)
             </Button>
           </div>
 
-          <Button
-            onClick={() => createPost.mutate()}
-            disabled={createPost.isPending}
-            className="min-w-28"
-          >
-            {createPost.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Posting
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4 mr-2" />
-                Post
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={updatePost.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => updatePost.mutate()}
+              disabled={updatePost.isPending}
+              className="min-w-28"
+            >
+              {updatePost.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Updating
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Update
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </CardContent>
       
