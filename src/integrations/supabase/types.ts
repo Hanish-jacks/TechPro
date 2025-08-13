@@ -84,7 +84,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
-          image_urls: string[] | null
+          image_urls: Json | null
           updated_at: string
           user_id: string
         }
@@ -93,7 +93,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
-          image_urls?: string[] | null
+          image_urls?: Json | null
           updated_at?: string
           user_id: string
         }
@@ -102,9 +102,24 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
-          image_urls?: string[] | null
+          image_urls?: Json | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      posts_backup: {
+        Row: {
+          id: string | null
+          image_url: string | null
+        }
+        Insert: {
+          id?: string | null
+          image_url?: string | null
+        }
+        Update: {
+          id?: string | null
+          image_url?: string | null
         }
         Relationships: []
       }
