@@ -175,7 +175,26 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_user_profile_with_stats: {
+        Args: { user_uuid: string }
+        Returns: {
+          id: string
+          full_name: string
+          created_at: string
+          post_count: number
+          total_likes: number
+        }[]
+      }
+      search_all: {
+        Args: { search_term: string }
+        Returns: {
+          post_id: string
+          content: string
+          user_id: string
+          created_at: string
+          relevance: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
