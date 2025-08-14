@@ -85,6 +85,10 @@ export type Database = {
           id: string
           image_url: string | null
           image_urls: Json | null
+          video_url: string | null
+          video_thumbnail_url: string | null
+          video_duration: number | null
+          video_size: number | null
           updated_at: string
           user_id: string
         }
@@ -94,6 +98,10 @@ export type Database = {
           id?: string
           image_url?: string | null
           image_urls?: Json | null
+          video_url?: string | null
+          video_thumbnail_url?: string | null
+          video_duration?: number | null
+          video_size?: number | null
           updated_at?: string
           user_id: string
         }
@@ -103,6 +111,10 @@ export type Database = {
           id?: string
           image_url?: string | null
           image_urls?: Json | null
+          video_url?: string | null
+          video_thumbnail_url?: string | null
+          video_duration?: number | null
+          video_size?: number | null
           updated_at?: string
           user_id?: string
         }

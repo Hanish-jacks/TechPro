@@ -59,9 +59,56 @@ export default function PostComposer({ userId }: PostComposerProps) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const uploadMedia = async (files: MediaFile[]): Promise<{ images: string[], videos: string[] }> => {
+  // Function to generate video thumbnail
+  const generateVideoThumbnail = (videoFile: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      video.onloadeddata = () => {
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Seek to 0.1 seconds to avoid black frames
+        video.currentTime = 0.1;
+        
+        video.onseeked = () => {
+          if (ctx) {
+            // Draw the video frame to canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert canvas to blob
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const thumbnailUrl = URL.createObjectURL(blob);
+                resolve(thumbnailUrl);
+              } else {
+                // Fallback to video URL if thumbnail generation fails
+                resolve(URL.createObjectURL(videoFile));
+              }
+            }, 'image/jpeg', 0.8);
+          } else {
+            resolve(URL.createObjectURL(videoFile));
+          }
+        };
+      };
+      
+      video.onerror = () => {
+        // Fallback if video loading fails
+        resolve(URL.createObjectURL(videoFile));
+      };
+      
+      video.src = URL.createObjectURL(videoFile);
+      video.load();
+    });
+  };
+
+  const uploadMedia = async (files: MediaFile[]): Promise<{ images: string[], videos: string[], thumbnails: string[] }> => {
     const images: string[] = [];
     const videos: string[] = [];
+    const thumbnails: string[] = [];
 
     for (const mediaFile of files) {
       const path = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}-${mediaFile.file.name}`;
@@ -76,6 +123,7 @@ export default function PostComposer({ userId }: PostComposerProps) {
         const { data } = supabase.storage.from("post-images").getPublicUrl(path);
         images.push(data.publicUrl);
       } else {
+        // Upload video
         const { error } = await supabase.storage
           .from("post-videos")
           .upload(path, mediaFile.file, { cacheControl: "3600", upsert: false });
@@ -84,10 +132,30 @@ export default function PostComposer({ userId }: PostComposerProps) {
 
         const { data } = supabase.storage.from("post-videos").getPublicUrl(path);
         videos.push(data.publicUrl);
+        
+        // Generate and upload thumbnail
+        try {
+          const thumbnailBlob = await generateVideoThumbnail(mediaFile.file);
+          const thumbnailPath = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}-thumb-${mediaFile.file.name.replace(/\.[^/.]+$/, '.jpg')}`;
+          
+          const { error: thumbError } = await supabase.storage
+            .from("post-images")
+            .upload(thumbnailPath, thumbnailBlob, { cacheControl: "3600", upsert: false });
+          
+          if (!thumbError) {
+            const { data: thumbData } = supabase.storage.from("post-images").getPublicUrl(thumbnailPath);
+            thumbnails.push(thumbData.publicUrl);
+          } else {
+            thumbnails.push(data.publicUrl); // Fallback to video URL
+          }
+        } catch (error) {
+          console.warn('Failed to generate thumbnail:', error);
+          thumbnails.push(data.publicUrl); // Fallback to video URL
+        }
       }
     }
 
-    return { images, videos };
+    return { images, videos, thumbnails };
   };
 
   const createPost = useMutation({
@@ -97,12 +165,21 @@ export default function PostComposer({ userId }: PostComposerProps) {
       }
 
       let image_urls: string[] = [];
-      let video_urls: string[] = [];
+      let video_url: string | null = null;
+      let video_thumbnail_url: string | null = null;
       
       if (mediaFiles.length > 0) {
-        const { images, videos } = await uploadMedia(mediaFiles);
-        image_urls = images;
-        video_urls = videos;
+        const { images, videos, thumbnails } = await uploadMedia(mediaFiles);
+        
+        // If we have videos, prioritize video and don't include images
+        if (videos.length > 0) {
+          video_url = videos[0];
+          // Use the generated thumbnail
+          video_thumbnail_url = thumbnails[0] || videos[0];
+        } else {
+          // Only include images if no videos
+          image_urls = images;
+        }
       }
 
       const { error } = await (supabase as any)
@@ -110,8 +187,9 @@ export default function PostComposer({ userId }: PostComposerProps) {
         .insert({ 
           user_id: userId, 
           content: content.trim(), 
-          image_urls: image_urls,
-          video_urls: video_urls
+          image_urls: image_urls.length > 0 ? image_urls : null,
+          video_url: video_url,
+          video_thumbnail_url: video_thumbnail_url
         });
 
       if (error) throw error;
@@ -138,6 +216,31 @@ export default function PostComposer({ userId }: PostComposerProps) {
         type: file.type.startsWith('image/') ? 'image' : 'video',
         preview: URL.createObjectURL(file)
       }));
+
+      // Check if we're trying to mix videos and images
+      const hasVideos = mediaFiles.some(m => m.type === 'video') || newMediaFiles.some(m => m.type === 'video');
+      const hasImages = mediaFiles.some(m => m.type === 'image') || newMediaFiles.some(m => m.type === 'image');
+      
+      if (hasVideos && hasImages) {
+        toast({
+          title: "Mixed media not supported",
+          description: "Please select either videos OR images, not both.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check video file size (warn if over 50MB)
+      const videoFiles = newMediaFiles.filter(m => m.type === 'video');
+      for (const videoFile of videoFiles) {
+        if (videoFile.file.size > 50 * 1024 * 1024) { // 50MB
+          toast({
+            title: "Large video file",
+            description: "Videos over 50MB may take longer to upload and may not preview properly.",
+            variant: "default",
+          });
+        }
+      }
 
       const updatedMediaFiles = [...mediaFiles, ...newMediaFiles];
       setMediaFiles(updatedMediaFiles);
@@ -166,7 +269,12 @@ export default function PostComposer({ userId }: PostComposerProps) {
           <div className="space-y-3">
             {/* Selected Media Info */}
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Selected post media preview</span>
+              <span>
+                {getVideos().length > 0 
+                  ? `Video post (${getVideos().length} video${getVideos().length > 1 ? 's' : ''})`
+                  : `Selected post media preview (${mediaFiles.length} file${mediaFiles.length > 1 ? 's' : ''})`
+                }
+              </span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -197,6 +305,9 @@ export default function PostComposer({ userId }: PostComposerProps) {
                   videoUrl={videoFile.preview}
                   className="w-full"
                 />
+                <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                  Generating thumbnail...
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"

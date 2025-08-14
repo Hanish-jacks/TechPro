@@ -28,6 +28,9 @@ export const PostVideo: React.FC<PostVideoProps> = ({
   hasNext = false,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [thumbnailLoading, setThumbnailLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Handle ESC key to close modal
@@ -60,6 +63,13 @@ export const PostVideo: React.FC<PostVideoProps> = ({
   }, [isModalOpen]);
 
   const handleOpenModal = () => {
+    // Check if video URL is accessible
+    if (!videoUrl) {
+      console.error('No video URL provided');
+      return;
+    }
+    
+    // For large videos, show a loading state
     setIsModalOpen(true);
   };
 
@@ -95,25 +105,57 @@ export const PostVideo: React.FC<PostVideoProps> = ({
       >
         {/* Aspect Ratio Container */}
         <div className="relative aspect-video w-full">
-          {/* Thumbnail Image */}
-          <img
-            src={thumbnailUrl || videoUrl}
-            alt={title || "Video thumbnail"}
-            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-            onError={(e) => {
-              // Fallback to video element for thumbnail if image fails
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-            }}
-          />
-          
-          {/* Fallback Video Element for Thumbnail */}
-          {!thumbnailUrl && (
+          {/* Video Thumbnail - Show actual thumbnail or first frame */}
+          {thumbnailUrl && thumbnailUrl !== videoUrl ? (
+            // Show the actual thumbnail image
+            <>
+              {thumbnailLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <div className="text-white text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                    <p className="text-xs">Loading thumbnail...</p>
+                  </div>
+                </div>
+              )}
+              <img
+                src={thumbnailUrl}
+                alt={title || "Video thumbnail"}
+                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                onLoad={() => setThumbnailLoading(false)}
+                onError={() => {
+                  setThumbnailLoading(false);
+                  // If thumbnail fails, fall back to video frame
+                  const imgElement = document.querySelector(`[data-video-thumb="${videoUrl}"]`) as HTMLImageElement;
+                  if (imgElement) {
+                    imgElement.style.display = 'none';
+                    const videoElement = imgElement.nextElementSibling as HTMLVideoElement;
+                    if (videoElement) {
+                      videoElement.style.display = 'block';
+                    }
+                  }
+                }}
+                data-video-thumb={videoUrl}
+              />
+            </>
+          ) : (
+            // Fallback to video element showing first frame
             <video
               src={videoUrl}
-              className="absolute inset-0 h-full w-full object-cover"
+              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
               muted
               preload="metadata"
+              onLoadedData={(e) => {
+                // Ensure the video shows the first frame
+                const video = e.target as HTMLVideoElement;
+                video.currentTime = 0.1; // Skip to 0.1 seconds to avoid black frame
+                setThumbnailLoading(false);
+              }}
+              onSeeked={(e) => {
+                // When seeking is complete, pause the video to show the frame
+                const video = e.target as HTMLVideoElement;
+                video.pause();
+              }}
+              style={{ display: thumbnailUrl && thumbnailUrl !== videoUrl ? 'none' : 'block' }}
             />
           )}
 
@@ -123,6 +165,13 @@ export const PostVideo: React.FC<PostVideoProps> = ({
               <Play className="h-8 w-8 text-gray-800 ml-1" />
             </div>
           </div>
+          
+          {/* File Size Warning for Large Videos */}
+          {videoUrl && videoUrl.includes('post-videos') && (
+            <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+              Video Post
+            </div>
+          )}
 
           {/* Hover Effect Overlay */}
           <div className="absolute inset-0 bg-black/0 transition-all duration-200 group-hover:bg-black/10" />
@@ -185,6 +234,36 @@ export const PostVideo: React.FC<PostVideoProps> = ({
 
             {/* Video Player */}
             <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <div className="text-white text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                    <p>Loading video...</p>
+                  </div>
+                </div>
+              )}
+              
+              {hasError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <div className="text-white text-center">
+                    <p className="text-red-400 mb-2">Failed to load video</p>
+                    <p className="text-sm text-gray-300">The video may be too large or unavailable</p>
+                    <button 
+                      onClick={() => {
+                        setHasError(false);
+                        setIsLoading(true);
+                        if (videoRef.current) {
+                          videoRef.current.load();
+                        }
+                      }}
+                      className="mt-2 px-4 py-2 bg-white/20 rounded hover:bg-white/30 transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              )}
+              
               <video
                 ref={videoRef}
                 src={videoUrl}
@@ -194,6 +273,12 @@ export const PostVideo: React.FC<PostVideoProps> = ({
                 muted={false}
                 playsInline
                 preload="auto"
+                onLoadStart={() => setIsLoading(true)}
+                onCanPlay={() => setIsLoading(false)}
+                onError={() => {
+                  setIsLoading(false);
+                  setHasError(true);
+                }}
               >
                 Your browser does not support the video tag.
               </video>

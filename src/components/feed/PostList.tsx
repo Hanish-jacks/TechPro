@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import ImageViewer from "@/components/ui/image-viewer";
 import ImageGrid from "@/components/ui/image-grid";
+import { PostVideo } from "@/components/PostVideo";
 import CommentsSection from "./CommentsSection";
 import PostEditor from "./PostEditor";
 import { MoreHorizontal, Heart, MessageCircle, Share2, Edit3, Trash2 } from "lucide-react";
@@ -365,13 +366,25 @@ export default function PostList() {
                     <p className="text-sm whitespace-pre-wrap">{post.content}</p>
                   )}
 
+                  {/* Video Posts */}
+                  {post.video_url && (
+                    <PostVideo
+                      videoUrl={post.video_url}
+                      thumbnailUrl={post.video_thumbnail_url || undefined}
+                      title={post.content}
+                      description=""
+                      className="w-full"
+                    />
+                  )}
+                  
+                  {/* Image Posts */}
                   {post.image_urls && post.image_urls.length > 0 && (
                     <ImageGrid
                       images={post.image_urls}
                       onImageClick={(index) => openImageViewer(post.image_urls!, index)}
                     />
                   )}
-                  {post.image_url && !post.image_urls && (
+                  {post.image_url && !post.image_urls && !post.video_url && (
                     <img
                       src={post.image_url}
                       alt="Post image from TechPro feed"
