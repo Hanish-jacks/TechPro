@@ -1,15 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Post } from "@/integrations/supabase/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Heart, Share2, MoreHorizontal, Trash2, Edit3 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import CommentsSection from "./CommentsSection";
-import PostEditor from "./PostEditor";
-import ImageViewer from "@/components/ui/image-viewer";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,17 +22,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import ImageViewer from "@/components/ui/image-viewer";
+import ImageGrid from "@/components/ui/image-grid";
+import CommentsSection from "./CommentsSection";
+import PostEditor from "./PostEditor";
+import { MoreHorizontal, Heart, MessageCircle, Share2, Edit3, Trash2 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-
-interface Post {
-  id: string;
-  user_id: string;
-  content: string;
-  image_url?: string | null;
-  image_urls?: string[] | null;
-  created_at: string;
-  updated_at: string;
-}
 
 export default function PostList() {
   const queryClient = useQueryClient();
@@ -374,120 +366,10 @@ export default function PostList() {
                   )}
 
                   {post.image_urls && post.image_urls.length > 0 && (
-                    <div className={`
-                      ${post.image_urls.length === 1 ? 'w-full' : ''}
-                      ${post.image_urls.length === 2 ? 'grid grid-cols-2 gap-1' : ''}
-                      ${post.image_urls.length === 3 ? 'grid grid-cols-2 gap-1' : ''}
-                      ${post.image_urls.length >= 4 ? 'grid grid-cols-2 gap-1' : ''}
-                    `}>
-                      {post.image_urls.length === 1 && (
-                        <div className="relative w-full">
-                          <img
-                            src={post.image_urls[0]}
-                            alt="Post image from TechPro feed"
-                            loading="lazy"
-                            className="rounded-lg w-full h-auto max-h-[500px] object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                            onClick={() => openImageViewer(post.image_urls!, 0)}
-                          />
-                        </div>
-                      )}
-                      
-                      {post.image_urls.length === 2 && post.image_urls.map((imageUrl, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={imageUrl}
-                            alt={`Post image ${index + 1} from TechPro feed`}
-                            loading="lazy"
-                            className="rounded-lg w-full h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                            onClick={() => openImageViewer(post.image_urls!, index)}
-                          />
-                        </div>
-                      ))}
-                      
-                      {post.image_urls.length === 3 && (
-                        <>
-                          <div className="relative">
-                            <img
-                              src={post.image_urls[0]}
-                              alt="Post image 1 from TechPro feed"
-                              loading="lazy"
-                              className="rounded-lg w-full h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                              onClick={() => openImageViewer(post.image_urls!, 0)}
-                            />
-                          </div>
-                          <div className="grid grid-rows-2 gap-1">
-                            <div className="relative">
-                              <img
-                                src={post.image_urls[1]}
-                                alt="Post image 2 from TechPro feed"
-                                loading="lazy"
-                                className="rounded-lg w-full h-[calc(8rem-0.125rem)] object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                                onClick={() => openImageViewer(post.image_urls!, 1)}
-                              />
-                            </div>
-                            <div className="relative">
-                              <img
-                                src={post.image_urls[2]}
-                                alt="Post image 3 from TechPro feed"
-                                loading="lazy"
-                                className="rounded-lg w-full h-[calc(8rem-0.125rem)] object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                                onClick={() => openImageViewer(post.image_urls!, 2)}
-                              />
-                            </div>
-                          </div>
-                        </>
-                      )}
-                      
-                      {post.image_urls.length >= 4 && (
-                        <>
-                          <div className="relative">
-                            <img
-                              src={post.image_urls[0]}
-                              alt="Post image 1 from TechPro feed"
-                              loading="lazy"
-                              className="rounded-lg w-full h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                              onClick={() => openImageViewer(post.image_urls!, 0)}
-                            />
-                          </div>
-                          <div className="grid grid-rows-2 gap-1">
-                            <div className="relative">
-                              <img
-                                src={post.image_urls[1]}
-                                alt="Post image 2 from TechPro feed"
-                                loading="lazy"
-                                className="rounded-lg w-full h-[calc(8rem-0.125rem)] object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                                onClick={() => openImageViewer(post.image_urls!, 1)}
-                              />
-                            </div>
-                            <div className="relative">
-                              <img
-                                src={post.image_urls[2]}
-                                alt="Post image 3 from TechPro feed"
-                                loading="lazy"
-                                className="rounded-lg w-full h-[calc(8rem-0.125rem)] object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                                onClick={() => openImageViewer(post.image_urls!, 2)}
-                              />
-                              {post.image_urls.length > 4 && (
-                                <div 
-                                  className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center cursor-pointer hover:bg-black/70 transition-colors"
-                                  onClick={() => openImageViewer(post.image_urls!, 3)}
-                                >
-                                  <span className="text-white font-semibold text-lg">
-                                    +{post.image_urls.length - 3}
-                                  </span>
-                                </div>
-                              )}
-                              {post.image_urls.length === 4 && (
-                                <div 
-                                  className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center cursor-pointer hover:bg-black/50 transition-colors opacity-0 hover:opacity-100"
-                                  onClick={() => openImageViewer(post.image_urls!, 3)}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    <ImageGrid
+                      images={post.image_urls}
+                      onImageClick={(index) => openImageViewer(post.image_urls!, index)}
+                    />
                   )}
                   {post.image_url && !post.image_urls && (
                     <img

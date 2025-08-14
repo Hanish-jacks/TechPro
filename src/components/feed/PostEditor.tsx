@@ -5,9 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, Send, Loader2, X, Edit3 } from "lucide-react";
+import { Image as ImageIcon, Send, Loader2, Edit3 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ImageViewer from "@/components/ui/image-viewer";
+import ImageGridPreview from "@/components/ui/image-grid-preview";
 
 interface PostEditorProps {
   post: {
@@ -175,28 +176,11 @@ export default function PostEditor({ post, userId, onCancel }: PostEditorProps) 
         />
 
         {previews.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {previews.map((preview, index) => (
-              <div key={index} className="relative">
-                <img
-                  src={preview}
-                  alt={`Post image preview ${index + 1}`}
-                  loading="lazy"
-                  className="rounded-md w-full object-cover h-32 cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => openImageViewer(previews, index)}
-                />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="secondary"
-                  className="absolute top-1 right-1 h-6 w-6"
-                  onClick={() => removeImage(index)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
+          <ImageGridPreview
+            images={previews}
+            onRemove={removeImage}
+            onOpenViewer={openImageViewer}
+          />
         )}
 
         <div className="flex items-center justify-between gap-2">

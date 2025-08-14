@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ImageViewerProps {
   images: string[];
@@ -19,6 +20,13 @@ export default function ImageViewer({ images, initialIndex = 0, isOpen, onClose 
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const isMobile = useIsMobile();
+
+  // Minimum swipe distance for navigation
+  const minSwipeDistance = 50;
 
   useEffect(() => {
     setScale(1);
@@ -29,13 +37,13 @@ export default function ImageViewer({ images, initialIndex = 0, isOpen, onClose 
     setCurrentIndex(initialIndex);
   }, [initialIndex]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
-  };
+  }, [images.length]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
-  };
+  }, [images.length]);
 
   const handleZoomIn = () => {
     setScale((prev) => Math.min(prev * 1.2, 3));
@@ -49,7 +57,31 @@ export default function ImageViewer({ images, initialIndex = 0, isOpen, onClose 
     setRotation((prev) => (prev + 90) % 360);
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
+  // Touch handlers for mobile swipe
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      handleNext();
+    } else if (isRightSwipe) {
+      handlePrevious();
+    }
+  };
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!isOpen) return;
 
     switch (e.key) {
@@ -73,12 +105,12 @@ export default function ImageViewer({ images, initialIndex = 0, isOpen, onClose 
         handleRotate();
         break;
     }
-  };
+  }, [isOpen, handlePrevious, handleNext, onClose]);
 
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
+  }, [handleKeyDown]);
 
   if (!images.length) return null;
 
@@ -87,7 +119,7 @@ export default function ImageViewer({ images, initialIndex = 0, isOpen, onClose 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-0">
-        <DialogHeader className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between bg-black/50 backdrop-blur-sm rounded-lg p-3">
+        <DialogHeader className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between bg-black/50 backdrop-blur-sm rounded-lg p-3">
           <DialogTitle className="text-white text-sm">
             {currentIndex + 1} of {images.length}
           </DialogTitle>
@@ -127,7 +159,12 @@ export default function ImageViewer({ images, initialIndex = 0, isOpen, onClose 
           </div>
         </DialogHeader>
 
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div 
+          className="relative w-full h-full flex items-center justify-center"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           {images.length > 1 && (
             <>
               <Button
@@ -151,6 +188,7 @@ export default function ImageViewer({ images, initialIndex = 0, isOpen, onClose 
 
           <div className="flex items-center justify-center w-full h-full p-4">
             <img
+              ref={imageRef}
               src={currentImage}
               alt={`Image ${currentIndex + 1}`}
               className="max-w-full max-h-full object-contain transition-transform duration-200"
@@ -184,6 +222,13 @@ export default function ImageViewer({ images, initialIndex = 0, isOpen, onClose 
               <ZoomIn className="h-4 w-4" />
             </Button>
           </div>
+
+          {/* Mobile swipe indicator */}
+          {isMobile && images.length > 1 && (
+            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 text-white/60 text-xs bg-black/30 px-2 py-1 rounded">
+              Swipe to navigate
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
