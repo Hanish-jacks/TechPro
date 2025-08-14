@@ -114,21 +114,50 @@ export default function PostComposer({ userId }: PostComposerProps) {
         />
 
         {previews.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {previews.map((preview, index) => (
+          <div className={`
+            ${previews.length === 1 ? 'w-full' : ''}
+            ${previews.length === 2 ? 'grid grid-cols-2 gap-2' : ''}
+            ${previews.length === 3 ? 'grid grid-cols-2 gap-2' : ''}
+            ${previews.length >= 4 ? 'grid grid-cols-2 gap-2' : ''}
+          `}>
+            {previews.length === 1 && (
+              <div className="relative w-full">
+                <img
+                  src={previews[0]}
+                  alt="Selected post image preview"
+                  loading="lazy"
+                  className="rounded-lg w-full h-auto max-h-96 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                  onClick={() => openImageViewer(previews, 0)}
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="absolute top-2 right-2 h-8 w-8 bg-black/50 hover:bg-black/70 text-white border-0"
+                  onClick={() => {
+                    setFiles([]);
+                    setPreviews([]);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            
+            {previews.length === 2 && previews.map((preview, index) => (
               <div key={index} className="relative">
                 <img
                   src={preview}
                   alt={`Selected post image preview ${index + 1}`}
                   loading="lazy"
-                  className="rounded-md w-full object-cover h-32 cursor-pointer hover:opacity-90 transition-opacity"
+                  className="rounded-lg w-full h-48 object-cover cursor-pointer hover:opacity-95 transition-opacity"
                   onClick={() => openImageViewer(previews, index)}
                 />
                 <Button
                   type="button"
                   size="icon"
                   variant="secondary"
-                  className="absolute top-1 right-1 h-6 w-6"
+                  className="absolute top-2 right-2 h-6 w-6 bg-black/50 hover:bg-black/70 text-white border-0"
                   onClick={() => {
                     const newFiles = files.filter((_, i) => i !== index);
                     const newPreviews = previews.filter((_, i) => i !== index);
@@ -140,6 +169,147 @@ export default function PostComposer({ userId }: PostComposerProps) {
                 </Button>
               </div>
             ))}
+            
+            {previews.length === 3 && (
+              <>
+                <div className="relative">
+                  <img
+                    src={previews[0]}
+                    alt="Selected post image preview 1"
+                    loading="lazy"
+                    className="rounded-lg w-full h-48 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                    onClick={() => openImageViewer(previews, 0)}
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="secondary"
+                    className="absolute top-2 right-2 h-6 w-6 bg-black/50 hover:bg-black/70 text-white border-0"
+                    onClick={() => {
+                      const newFiles = files.filter((_, i) => i !== 0);
+                      const newPreviews = previews.filter((_, i) => i !== 0);
+                      setFiles(newFiles);
+                      setPreviews(newPreviews);
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                <div className="grid grid-rows-2 gap-2">
+                  {[1, 2].map((index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={previews[index]}
+                        alt={`Selected post image preview ${index + 1}`}
+                        loading="lazy"
+                        className="rounded-lg w-full h-[calc(6rem-0.25rem)] object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                        onClick={() => openImageViewer(previews, index)}
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="secondary"
+                        className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70 text-white border-0"
+                        onClick={() => {
+                          const newFiles = files.filter((_, i) => i !== index);
+                          const newPreviews = previews.filter((_, i) => i !== index);
+                          setFiles(newFiles);
+                          setPreviews(newPreviews);
+                        }}
+                      >
+                        <X className="h-2 w-2" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            
+            {previews.length >= 4 && (
+              <>
+                <div className="relative">
+                  <img
+                    src={previews[0]}
+                    alt="Selected post image preview 1"
+                    loading="lazy"
+                    className="rounded-lg w-full h-48 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                    onClick={() => openImageViewer(previews, 0)}
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="secondary"
+                    className="absolute top-2 right-2 h-6 w-6 bg-black/50 hover:bg-black/70 text-white border-0"
+                    onClick={() => {
+                      const newFiles = files.filter((_, i) => i !== 0);
+                      const newPreviews = previews.filter((_, i) => i !== 0);
+                      setFiles(newFiles);
+                      setPreviews(newPreviews);
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                <div className="grid grid-rows-2 gap-2">
+                  <div className="relative">
+                    <img
+                      src={previews[1]}
+                      alt="Selected post image preview 2"
+                      loading="lazy"
+                      className="rounded-lg w-full h-[calc(6rem-0.25rem)] object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                      onClick={() => openImageViewer(previews, 1)}
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70 text-white border-0"
+                      onClick={() => {
+                        const newFiles = files.filter((_, i) => i !== 1);
+                        const newPreviews = previews.filter((_, i) => i !== 1);
+                        setFiles(newFiles);
+                        setPreviews(newPreviews);
+                      }}
+                    >
+                      <X className="h-2 w-2" />
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <img
+                      src={previews[2]}
+                      alt="Selected post image preview 3"
+                      loading="lazy"
+                      className="rounded-lg w-full h-[calc(6rem-0.25rem)] object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                      onClick={() => openImageViewer(previews, 2)}
+                    />
+                    {previews.length > 4 && (
+                      <div 
+                        className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center cursor-pointer hover:bg-black/70 transition-colors"
+                        onClick={() => openImageViewer(previews, 3)}
+                      >
+                        <span className="text-white font-semibold text-sm">
+                          +{previews.length - 3}
+                        </span>
+                      </div>
+                    )}
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70 text-white border-0 z-10"
+                      onClick={() => {
+                        const newFiles = files.filter((_, i) => i !== 2);
+                        const newPreviews = previews.filter((_, i) => i !== 2);
+                        setFiles(newFiles);
+                        setPreviews(newPreviews);
+                      }}
+                    >
+                      <X className="h-2 w-2" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 

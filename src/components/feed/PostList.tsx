@@ -374,27 +374,119 @@ export default function PostList() {
                   )}
 
                   {post.image_urls && post.image_urls.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {post.image_urls.slice(0, 3).map((imageUrl, index) => (
+                    <div className={`
+                      ${post.image_urls.length === 1 ? 'w-full' : ''}
+                      ${post.image_urls.length === 2 ? 'grid grid-cols-2 gap-1' : ''}
+                      ${post.image_urls.length === 3 ? 'grid grid-cols-2 gap-1' : ''}
+                      ${post.image_urls.length >= 4 ? 'grid grid-cols-2 gap-1' : ''}
+                    `}>
+                      {post.image_urls.length === 1 && (
+                        <div className="relative w-full">
+                          <img
+                            src={post.image_urls[0]}
+                            alt="Post image from TechPro feed"
+                            loading="lazy"
+                            className="rounded-lg w-full h-auto max-h-[500px] object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                            onClick={() => openImageViewer(post.image_urls!, 0)}
+                          />
+                        </div>
+                      )}
+                      
+                      {post.image_urls.length === 2 && post.image_urls.map((imageUrl, index) => (
                         <div key={index} className="relative">
                           <img
                             src={imageUrl}
                             alt={`Post image ${index + 1} from TechPro feed`}
                             loading="lazy"
-                            className={`rounded-md w-full object-cover cursor-pointer hover:opacity-90 transition-opacity ${
-                              post.image_urls!.length === 1 ? 'max-h-96' : 'h-32'
-                            }`}
+                            className="rounded-lg w-full h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity"
                             onClick={() => openImageViewer(post.image_urls!, index)}
                           />
-                          {post.image_urls!.length > 3 && index === 2 && (
-                            <div className="absolute inset-0 bg-black/50 rounded-md flex items-center justify-center">
-                              <span className="text-white font-semibold">
-                                +{post.image_urls!.length - 3} more
-                              </span>
-                            </div>
-                          )}
                         </div>
                       ))}
+                      
+                      {post.image_urls.length === 3 && (
+                        <>
+                          <div className="relative">
+                            <img
+                              src={post.image_urls[0]}
+                              alt="Post image 1 from TechPro feed"
+                              loading="lazy"
+                              className="rounded-lg w-full h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                              onClick={() => openImageViewer(post.image_urls!, 0)}
+                            />
+                          </div>
+                          <div className="grid grid-rows-2 gap-1">
+                            <div className="relative">
+                              <img
+                                src={post.image_urls[1]}
+                                alt="Post image 2 from TechPro feed"
+                                loading="lazy"
+                                className="rounded-lg w-full h-[calc(8rem-0.125rem)] object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                                onClick={() => openImageViewer(post.image_urls!, 1)}
+                              />
+                            </div>
+                            <div className="relative">
+                              <img
+                                src={post.image_urls[2]}
+                                alt="Post image 3 from TechPro feed"
+                                loading="lazy"
+                                className="rounded-lg w-full h-[calc(8rem-0.125rem)] object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                                onClick={() => openImageViewer(post.image_urls!, 2)}
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      
+                      {post.image_urls.length >= 4 && (
+                        <>
+                          <div className="relative">
+                            <img
+                              src={post.image_urls[0]}
+                              alt="Post image 1 from TechPro feed"
+                              loading="lazy"
+                              className="rounded-lg w-full h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                              onClick={() => openImageViewer(post.image_urls!, 0)}
+                            />
+                          </div>
+                          <div className="grid grid-rows-2 gap-1">
+                            <div className="relative">
+                              <img
+                                src={post.image_urls[1]}
+                                alt="Post image 2 from TechPro feed"
+                                loading="lazy"
+                                className="rounded-lg w-full h-[calc(8rem-0.125rem)] object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                                onClick={() => openImageViewer(post.image_urls!, 1)}
+                              />
+                            </div>
+                            <div className="relative">
+                              <img
+                                src={post.image_urls[2]}
+                                alt="Post image 3 from TechPro feed"
+                                loading="lazy"
+                                className="rounded-lg w-full h-[calc(8rem-0.125rem)] object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                                onClick={() => openImageViewer(post.image_urls!, 2)}
+                              />
+                              {post.image_urls.length > 4 && (
+                                <div 
+                                  className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center cursor-pointer hover:bg-black/70 transition-colors"
+                                  onClick={() => openImageViewer(post.image_urls!, 3)}
+                                >
+                                  <span className="text-white font-semibold text-lg">
+                                    +{post.image_urls.length - 3}
+                                  </span>
+                                </div>
+                              )}
+                              {post.image_urls.length === 4 && (
+                                <div 
+                                  className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center cursor-pointer hover:bg-black/50 transition-colors opacity-0 hover:opacity-100"
+                                  onClick={() => openImageViewer(post.image_urls!, 3)}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                   {post.image_url && !post.image_urls && (
