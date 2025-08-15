@@ -89,6 +89,10 @@ export type Database = {
           video_thumbnail_url: string | null
           video_duration: number | null
           video_size: number | null
+          pdf_url: string | null
+          pdf_filename: string | null
+          pdf_size: number | null
+          pdf_pages: number | null
           updated_at: string
           user_id: string
         }
@@ -102,6 +106,10 @@ export type Database = {
           video_thumbnail_url?: string | null
           video_duration?: number | null
           video_size?: number | null
+          pdf_url?: string | null
+          pdf_filename?: string | null
+          pdf_size?: number | null
+          pdf_pages?: number | null
           updated_at?: string
           user_id: string
         }
@@ -115,6 +123,10 @@ export type Database = {
           video_thumbnail_url?: string | null
           video_duration?: number | null
           video_size?: number | null
+          pdf_url?: string | null
+          pdf_filename?: string | null
+          pdf_size?: number | null
+          pdf_pages?: number | null
           updated_at?: string
           user_id?: string
         }

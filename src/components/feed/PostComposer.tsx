@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ImageViewer from "@/components/ui/image-viewer";
 import ImageGridPreview from "@/components/ui/image-grid-preview";
 import { PostVideo } from "@/components/PostVideo";
+import { PDFViewer } from "@/components/PDFViewer";
 
 interface PostComposerProps {
   userId: string;
@@ -17,7 +18,7 @@ interface PostComposerProps {
 
 interface MediaFile {
   file: File;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'pdf';
   preview: string;
 }
 
@@ -105,10 +106,11 @@ export default function PostComposer({ userId }: PostComposerProps) {
     });
   };
 
-  const uploadMedia = async (files: MediaFile[]): Promise<{ images: string[], videos: string[], thumbnails: string[] }> => {
+  const uploadMedia = async (files: MediaFile[]): Promise<{ images: string[], videos: string[], thumbnails: string[], pdfs: any[] }> => {
     const images: string[] = [];
     const videos: string[] = [];
     const thumbnails: string[] = [];
+    const pdfs: any[] = [];
 
     for (const mediaFile of files) {
       const path = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}-${mediaFile.file.name}`;
@@ -122,6 +124,21 @@ export default function PostComposer({ userId }: PostComposerProps) {
 
         const { data } = supabase.storage.from("post-images").getPublicUrl(path);
         images.push(data.publicUrl);
+      } else if (mediaFile.type === 'pdf') {
+        // Upload PDF
+        const { error } = await supabase.storage
+          .from("post-pdfs")
+          .upload(path, mediaFile.file, { cacheControl: "3600", upsert: false });
+
+        if (error) throw error;
+
+        const { data } = supabase.storage.from("post-pdfs").getPublicUrl(path);
+        pdfs.push({
+          url: data.publicUrl,
+          filename: mediaFile.file.name,
+          size: mediaFile.file.size,
+          // Note: page count would need to be determined client-side or via a separate service
+        });
       } else {
         // Upload video
         const { error } = await supabase.storage
@@ -155,7 +172,7 @@ export default function PostComposer({ userId }: PostComposerProps) {
       }
     }
 
-    return { images, videos, thumbnails };
+    return { images, videos, thumbnails, pdfs };
   };
 
   const createPost = useMutation({
@@ -167,17 +184,25 @@ export default function PostComposer({ userId }: PostComposerProps) {
       let image_urls: string[] = [];
       let video_url: string | null = null;
       let video_thumbnail_url: string | null = null;
+      let pdf_url: string | null = null;
+      let pdf_filename: string | null = null;
+      let pdf_size: number | null = null;
       
       if (mediaFiles.length > 0) {
-        const { images, videos, thumbnails } = await uploadMedia(mediaFiles);
+        const { images, videos, thumbnails, pdfs } = await uploadMedia(mediaFiles);
         
-        // If we have videos, prioritize video and don't include images
-        if (videos.length > 0) {
+        // If we have PDFs, prioritize PDF and don't include other media
+        if (pdfs.length > 0) {
+          pdf_url = pdfs[0].url;
+          pdf_filename = pdfs[0].filename;
+          pdf_size = pdfs[0].size;
+        } else if (videos.length > 0) {
+          // If we have videos, prioritize video and don't include images
           video_url = videos[0];
           // Use the generated thumbnail
           video_thumbnail_url = thumbnails[0] || videos[0];
         } else {
-          // Only include images if no videos
+          // Only include images if no videos or PDFs
           image_urls = images;
         }
       }
@@ -189,7 +214,10 @@ export default function PostComposer({ userId }: PostComposerProps) {
           content: content.trim(), 
           image_urls: image_urls.length > 0 ? image_urls : null,
           video_url: video_url,
-          video_thumbnail_url: video_thumbnail_url
+          video_thumbnail_url: video_thumbnail_url,
+          pdf_url: pdf_url,
+          pdf_filename: pdf_filename,
+          pdf_size: pdf_size
         });
 
       if (error) throw error;
@@ -213,18 +241,22 @@ export default function PostComposer({ userId }: PostComposerProps) {
     if (selectedFiles.length > 0) {
       const newMediaFiles: MediaFile[] = selectedFiles.map(file => ({
         file,
-        type: file.type.startsWith('image/') ? 'image' : 'video',
+        type: file.type.startsWith('image/') ? 'image' : 
+               file.type === 'application/pdf' ? 'pdf' : 'video',
         preview: URL.createObjectURL(file)
       }));
 
-      // Check if we're trying to mix videos and images
+      // Check if we're trying to mix different media types
       const hasVideos = mediaFiles.some(m => m.type === 'video') || newMediaFiles.some(m => m.type === 'video');
       const hasImages = mediaFiles.some(m => m.type === 'image') || newMediaFiles.some(m => m.type === 'image');
+      const hasPDFs = mediaFiles.some(m => m.type === 'pdf') || newMediaFiles.some(m => m.type === 'pdf');
       
-      if (hasVideos && hasImages) {
+      // Only allow one type of media per post
+      const mediaTypes = [hasVideos, hasImages, hasPDFs].filter(Boolean);
+      if (mediaTypes.length > 1) {
         toast({
           title: "Mixed media not supported",
-          description: "Please select either videos OR images, not both.",
+          description: "Please select only one type of media: images, videos, or PDFs.",
           variant: "destructive",
         });
         return;
@@ -254,6 +286,15 @@ export default function PostComposer({ userId }: PostComposerProps) {
 
   const getImages = () => mediaFiles.filter(m => m.type === 'image').map(m => m.preview);
   const getVideos = () => mediaFiles.filter(m => m.type === 'video');
+  const getPDFs = () => mediaFiles.filter(m => m.type === 'pdf');
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   return (
     <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
@@ -268,18 +309,23 @@ export default function PostComposer({ userId }: PostComposerProps) {
         {mediaFiles.length > 0 && (
           <div className="space-y-3">
             {/* Selected Media Info */}
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>
-                {getVideos().length > 0 
-                  ? `Video post (${getVideos().length} video${getVideos().length > 1 ? 's' : ''})`
-                  : `Selected post media preview (${mediaFiles.length} file${mediaFiles.length > 1 ? 's' : ''})`
-                }
-              </span>
+            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  {getPDFs().length > 0 
+                    ? `📄 PDF Document Ready (${getPDFs().length} file${getPDFs().length > 1 ? 's' : ''})`
+                    : getVideos().length > 0 
+                    ? `🎥 Video Post (${getVideos().length} video${getVideos().length > 1 ? 's' : ''})`
+                    : `🖼️ Image${getImages().length > 1 ? 's' : ''} Selected (${mediaFiles.length} file${mediaFiles.length > 1 ? 's' : ''})`
+                  }
+                </span>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setMediaFiles([])}
-                className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -322,6 +368,44 @@ export default function PostComposer({ userId }: PostComposerProps) {
                 </Button>
               </div>
             ))}
+
+            {/* PDF Previews */}
+            {getPDFs().map((pdfFile, index) => (
+              <div key={index} className="relative">
+                <div className="relative">
+                  <PDFViewer
+                    pdfUrl={pdfFile.preview}
+                    filename={pdfFile.file.name}
+                    fileSize={pdfFile.file.size}
+                    className="w-full"
+                  />
+                  <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
+                    Ready to Post
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const pdfFiles = mediaFiles.filter(m => m.type === 'pdf');
+                      const actualIndex = mediaFiles.findIndex(m => m === pdfFiles[index]);
+                      if (actualIndex !== -1) removeMedia(actualIndex);
+                    }}
+                    className="absolute top-2 right-2 h-8 w-8 p-0 bg-red-500 hover:bg-red-600 text-white shadow-sm"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="mt-2 p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="flex items-center space-x-2 text-sm text-green-700 dark:text-green-300">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="font-medium">PDF Ready</span>
+                  </div>
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    {pdfFile.file.name} ({formatFileSize(pdfFile.file.size)}) will be uploaded when you post.
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -329,7 +413,7 @@ export default function PostComposer({ userId }: PostComposerProps) {
           <div className="flex items-center gap-2">
             <Input
               type="file"
-              accept="image/*,video/*"
+              accept="image/*,video/*,.pdf,application/pdf"
               multiple
               ref={fileInputRef}
               onChange={handleFileSelect}
@@ -342,7 +426,7 @@ export default function PostComposer({ userId }: PostComposerProps) {
               disabled={mediaFiles.length >= 10}
             >
               <ImageIcon className="h-4 w-4 mr-2" />
-              Add media ({mediaFiles.length}/10)
+              Add media/PDF ({mediaFiles.length}/10)
             </Button>
           </div>
 
