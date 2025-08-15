@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FileText, Download, Eye, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
@@ -47,11 +47,19 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
     if (onDownload) {
       onDownload();
     } else {
-      // Default download behavior
+      // Enhanced download behavior with proper filename
       const link = document.createElement('a');
       link.href = pdfUrl;
       link.download = filename || 'document.pdf';
+      link.target = '_blank';
+      
+      // Add click event to ensure download starts
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      
+      // Show success message
+      console.log(`Downloading: ${filename || 'document.pdf'}`);
     }
   };
 
@@ -64,20 +72,61 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   };
 
   const nextPage = () => {
-    if (pageCount && currentPage < pageCount) {
-      setCurrentPage(currentPage + 1);
+    const newPage = currentPage + 1;
+    setCurrentPage(newPage);
+    // Update iframe src to navigate to next page
+    if (iframeRef.current) {
+      iframeRef.current.src = `${pdfUrl}#page=${newPage}&view=FitH&scrollbar=1`;
     }
   };
 
   const prevPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
+      // Update iframe src to navigate to previous page
+      if (iframeRef.current) {
+        iframeRef.current.src = `${pdfUrl}#page=${newPage}&view=FitH&scrollbar=1`;
+      }
     }
   };
 
   const zoomIn = () => setScale(Math.min(scale + 0.2, 3));
   const zoomOut = () => setScale(Math.max(scale - 0.2, 0.5));
   const rotate = () => setRotation((rotation + 90) % 360);
+
+  // Handle keyboard navigation and ESC key to close modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isModalOpen) return;
+      
+      switch (event.key) {
+        case 'Escape':
+          setIsModalOpen(false);
+          break;
+        case 'ArrowRight':
+        case ' ':
+          event.preventDefault();
+          nextPage();
+          break;
+        case 'ArrowLeft':
+          event.preventDefault();
+          prevPage();
+          break;
+      }
+    };
+
+    if (isModalOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isModalOpen, currentPage]);
 
   return (
     <>
@@ -87,7 +136,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
           "relative group cursor-pointer overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]",
           className
         )}
-        onClick={handleOpenModal}
+        onClick={showPreview ? handleOpenModal : handleDownload}
       >
         {/* PDF Preview */}
         <div className="relative aspect-[4/3] w-full bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 dark:from-blue-950 dark:via-blue-900 dark:to-indigo-950">
@@ -128,11 +177,20 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
             </div>
           </div>
 
-          {/* Preview Button Overlay */}
+          {/* Preview/Download Button Overlay */}
           <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-200 group-hover:bg-black/20">
             <div className="flex items-center space-x-2 bg-white/95 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg transition-all duration-200 group-hover:scale-110 opacity-0 group-hover:opacity-100">
-              <Eye className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-600">Preview PDF</span>
+              {showPreview ? (
+                <>
+                  <Eye className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-600">Preview PDF</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-600">Download PDF</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -172,10 +230,17 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
               </div>
             </div>
             <div className="flex items-center space-x-2 ml-4">
-              <div className="flex items-center space-x-1 text-xs text-blue-600 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
-                <Eye className="h-3 w-3" />
-                <span>Preview</span>
-              </div>
+              {showPreview ? (
+                <div className="flex items-center space-x-1 text-xs text-blue-600 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
+                  <Eye className="h-3 w-3" />
+                  <span>Preview</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1 text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
+                  <Download className="h-3 w-3" />
+                  <span>Download</span>
+                </div>
+              )}
               <Download className="h-4 w-4 text-muted-foreground" />
             </div>
           </div>
@@ -211,10 +276,10 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={handleDownload}
-                  className="flex items-center space-x-2"
+                  className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
                 >
                   <Download className="h-4 w-4" />
-                  <span>Download</span>
+                  <span>Download PDF</span>
                 </Button>
                 <Button
                   variant="ghost"
@@ -240,14 +305,13 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
                 </Button>
                 
                 <span className="text-sm text-muted-foreground">
-                  Page {currentPage} {pageCount && `of ${pageCount}`}
+                  Page {currentPage}
                 </span>
                 
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={nextPage}
-                  disabled={pageCount ? currentPage >= pageCount : false}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -311,7 +375,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
               )}
               
               <div
-                className="mx-auto bg-white shadow-lg"
+                className="mx-auto bg-white shadow-lg w-full h-full"
                 style={{
                   transform: `scale(${scale}) rotate(${rotation}deg)`,
                   transformOrigin: 'center top',
@@ -320,10 +384,30 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
               >
                 <iframe
                   ref={iframeRef}
-                  src={`${pdfUrl}#page=${currentPage}`}
-                  className="w-full border-0"
-                  style={{ minHeight: '800px' }}
-                  onLoad={() => setIsLoading(false)}
+                  src={`${pdfUrl}#page=${currentPage}&view=FitH&scrollbar=1`}
+                  className="w-full h-full border-0"
+                  style={{ 
+                    minHeight: '600px',
+                    height: 'calc(100vh - 200px)',
+                    maxHeight: 'none'
+                  }}
+                  onLoad={() => {
+                    setIsLoading(false);
+                    // Try to get page count from iframe
+                    try {
+                      const iframe = iframeRef.current;
+                      if (iframe && iframe.contentWindow) {
+                        // Listen for messages from PDF viewer
+                        window.addEventListener('message', (event) => {
+                          if (event.data && event.data.type === 'pdf-page-count') {
+                            // Handle page count if available
+                          }
+                        });
+                      }
+                    } catch (error) {
+                      console.log('Could not get PDF page count');
+                    }
+                  }}
                   onError={() => {
                     setIsLoading(false);
                     setHasError(true);

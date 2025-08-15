@@ -28,7 +28,7 @@ import { PostVideo } from "@/components/PostVideo";
 import { PDFViewer } from "@/components/PDFViewer";
 import CommentsSection from "./CommentsSection";
 import PostEditor from "./PostEditor";
-import { MoreHorizontal, Heart, MessageCircle, Share2, Edit3, Trash2 } from "lucide-react";
+import { MoreHorizontal, Heart, MessageCircle, Share2, Edit3, Trash2, Download } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -47,6 +47,31 @@ export default function PostList() {
     initialIndex: 0,
   });
   const { toast } = useToast();
+
+  const handleDownloadPDF = (pdfUrl: string, filename: string) => {
+    try {
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = filename || 'document.pdf';
+      link.target = '_blank';
+      
+      // Add click event to ensure download starts
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Download started",
+        description: `${filename} is being downloaded to your device.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: "Unable to download the PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const openImageViewer = (images: string[], initialIndex: number = 0) => {
     setImageViewer({
@@ -329,30 +354,43 @@ export default function PostList() {
                     </div>
                   </div>
                 </div>
-                {isOwner && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {/* Download option for PDF posts */}
+                    {post.pdf_url && (
                       <DropdownMenuItem
-                        onClick={() => setEditingPostId(post.id)}
+                        onClick={() => handleDownloadPDF(post.pdf_url!, post.pdf_filename || 'document.pdf')}
                       >
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        Edit post
+                        <Download className="h-4 w-4 mr-2" />
+                        Download PDF
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setDeletePostId(post.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete post
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                    )}
+                    
+                    {/* Owner-only options */}
+                    {isOwner && (
+                      <>
+                        <DropdownMenuItem
+                          onClick={() => setEditingPostId(post.id)}
+                        >
+                          <Edit3 className="h-4 w-4 mr-2" />
+                          Edit post
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setDeletePostId(post.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete post
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               {editingPostId === post.id ? (
@@ -374,6 +412,7 @@ export default function PostList() {
                       filename={post.pdf_filename || undefined}
                       fileSize={post.pdf_size || undefined}
                       className="w-full"
+                      showPreview={true}
                     />
                   )}
                   
