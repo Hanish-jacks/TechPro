@@ -63,6 +63,9 @@ export default function Profile() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
+  
+  // If no username is provided, default to current user's profile
+  const profileUsername = username || "me";
 
   const queryClient = useQueryClient();
 
@@ -77,11 +80,11 @@ export default function Profile() {
 
   // Get profile data
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ["profile", username],
+    queryKey: ["profile", profileUsername],
     queryFn: async (): Promise<ProfileData> => {
       let profileData;
       
-      if (username === "me") {
+      if (profileUsername === "me") {
         // Get current user's profile
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("User not authenticated");
@@ -99,7 +102,7 @@ export default function Profile() {
         const { data, error } = await supabase
           .from("profiles")
           .select("*")
-          .eq("username", username)
+          .eq("username", profileUsername)
           .single();
 
         if (error) throw error;
@@ -144,7 +147,7 @@ export default function Profile() {
         updated_at: profileData.updated_at || profileData.created_at,
       };
     },
-    enabled: !!username,
+    enabled: !!profileUsername,
   });
 
   // Check if current user is following this profile (simplified for now)
@@ -476,51 +479,60 @@ export default function Profile() {
                         ))}
                       </div>
                     ) : userPosts && userPosts.length > 0 ? (
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {userPosts.map((post) => (
-                          <Card key={post.id} className="bg-card/30 border-border/30">
-                            <CardContent className="p-4">
-                              <div className="flex items-start gap-3 mb-3">
-                                <Avatar className="h-10 w-10">
-                                  {post.profiles.avatar_url ? (
-                                    <img src={post.profiles.avatar_url} alt={post.profiles.full_name} />
-                                  ) : (
-                                    <AvatarFallback>
-                                      {post.profiles.full_name?.slice(0, 2).toUpperCase() || post.profiles.username.slice(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                  )}
-                                </Avatar>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-medium">
-                                      {post.profiles.full_name || post.profiles.username}
-                                    </span>
-                                    <span className="text-muted-foreground text-sm">
-                                      @{post.profiles.username}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm text-muted-foreground">
-                                    {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                                  </p>
-                                </div>
+                          <div
+                            key={post.id}
+                            onClick={() => {
+                              // Create a modal or navigate to post detail
+                              toast({
+                                title: "Post Details",
+                                description: post.content.slice(0, 100) + (post.content.length > 100 ? "..." : ""),
+                              });
+                            }}
+                            className="group relative aspect-square bg-card border border-border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200"
+                          >
+                            {post.image_url ? (
+                              <img
+                                src={post.image_url}
+                                alt="Post image"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center p-4">
+                                <p className="text-sm text-center line-clamp-4 text-foreground">
+                                  {post.content}
+                                </p>
                               </div>
-                              <p className="text-sm whitespace-pre-wrap mb-3">{post.content}</p>
-                              {post.image_url && (
-                                <img
-                                  src={post.image_url}
-                                  alt="Post image"
-                                  className="rounded-md w-full object-cover max-h-64"
-                                />
-                              )}
-                            </CardContent>
-                          </Card>
+                            )}
+                            
+                            {/* Overlay with post info */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-end">
+                              <div className="p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <p className="text-xs font-medium">
+                                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                                </p>
+                                {post.image_url && (
+                                  <p className="text-xs mt-1 line-clamp-2">
+                                    {post.content}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">No posts yet.</p>
+                      <div className="text-center py-12">
+                        <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                          <div className="w-8 h-8 border-2 border-muted-foreground rounded-sm" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">No posts yet</h3>
+                        <p className="text-muted-foreground mb-4">
+                          {isOwnProfile ? "Share your first post with the community!" : "This user hasn't shared any posts yet."}
+                        </p>
                         {isOwnProfile && (
-                          <Button className="mt-2" onClick={() => navigate("/")}>
+                          <Button onClick={() => navigate("/")}>
                             Create your first post
                           </Button>
                         )}
