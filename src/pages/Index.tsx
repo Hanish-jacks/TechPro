@@ -160,112 +160,16 @@ const Index = () => {
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
-            <div>
-              <div className="flex items-center gap-3">
-                <img 
-                  src="/lovable-uploads/19794bde-56d5-4eb5-9583-17042d97b0af.png" 
-                  alt="TechPro Logo" 
-                  className="h-14 w-auto"
-                />
-                <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                  TechPro Dashboard
-                </h1>
-              </div>
-              <p className="text-muted-foreground mt-2">
-                Welcome back, {user.email}
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-4 w-full lg:w-auto">
-              <SearchBar />
-              <Button 
-                onClick={handleSignOut}
-                variant="outline"
-                className="border-border/50 hover:bg-destructive hover:text-destructive-foreground"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
+          <div className="mb-8">
+            <p className="text-muted-foreground text-center">
+              Welcome back, {user.email}
+            </p>
           </div>
 
-          {/* Dashboard Content - Social layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Left sidebar */}
-            <div className="space-y-4">
-              <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <UserIcon className="h-5 w-5 text-primary" />
-                    Profile
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Email:</span> {user.email}</p>
-                    <p><span className="font-medium">User ID:</span> {user.id}</p>
-                    <p><span className="font-medium">Created:</span> {new Date(user.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full mt-4"
-                    onClick={() => navigate("/profile/me")}
-                  >
-                    View My Profile
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
-                <CardHeader>
-                  <CardTitle>Shortcuts</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="text-sm space-y-2 text-muted-foreground">
-                    <li>• My Network</li>
-                    <li>• Saved</li>
-                    <li>• Groups</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Center feed */}
-            <div className="lg:col-span-2 space-y-4">
-              <PostComposer userId={user.id} />
-              <PostList />
-            </div>
-
-            {/* Right sidebar */}
-            <div className="space-y-4">
-              <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-primary" />
-                    Chats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-3">Real-time messaging coming soon.</p>
-                  <p className="text-xs text-muted-foreground">Use the chat button to start a conversation.</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
-                <CardHeader>
-                  <CardTitle>Who to follow</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="text-sm space-y-2 text-muted-foreground">
-                    <li>• Product Designers</li>
-                    <li>• Frontend Engineers</li>
-                    <li>• Data Scientists</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
+          {/* Dashboard Content - Clean layout */}
+          <div className="max-w-2xl mx-auto">
+            <PostComposer userId={user.id} />
+            <PostList />
           </div>
 
           {/* Floating Chat */}
