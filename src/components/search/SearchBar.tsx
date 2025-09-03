@@ -48,7 +48,7 @@ export default function SearchBar() {
       try {
         // Use the optimized search function
         const { data: searchData, error: searchError } = await supabase
-          .rpc('search_all', { query: query })
+          .rpc('search_all', { search_term: query })
           .limit(10);
 
         if (!searchError && searchData) {
@@ -117,8 +117,8 @@ export default function SearchBar() {
           // Simple profile search
           const { data: profiles, error: profilesError } = await supabase
             .from("profiles")
-            .select("id, username, full_name, avatar_url, created_at")
-            .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
+            .select("id, full_name, created_at")
+            .or(`full_name.ilike.%${query}%`)
             .limit(3);
 
           if (!profilesError && profiles) {
@@ -126,12 +126,10 @@ export default function SearchBar() {
               results.push({
                 id: profile.id,
                 type: "profile",
-                title: profile.full_name || profile.username || "Unknown User",
-                subtitle: `@${profile.username}`,
-                image: profile.avatar_url,
+                title: profile.full_name || "Unknown User",
+                subtitle: `User Profile`,
                 timestamp: profile.created_at,
                 user_id: profile.id,
-                username: profile.username,
               });
             });
           }
@@ -139,20 +137,13 @@ export default function SearchBar() {
           // Simple post search
           const { data: posts, error: postsError } = await supabase
             .from("posts")
-            .select(`
-              id, 
-              content, 
-              created_at, 
-              user_id,
-              profiles!inner(username, full_name, avatar_url)
-            `)
+            .select(`id, content, created_at, user_id`)
             .or(`content.ilike.%${query}%`)
             .order("created_at", { ascending: false })
             .limit(3);
 
           if (!postsError && posts) {
             posts.forEach((post) => {
-              const profile = post.profiles;
               const content = post.content.length > 100 
                 ? post.content.substring(0, 100) + "..." 
                 : post.content;
@@ -161,12 +152,10 @@ export default function SearchBar() {
                 id: post.id,
                 type: "post",
                 title: content,
-                subtitle: `by ${profile.full_name || profile.username || "Unknown User"}`,
+                subtitle: `Post content`,
                 content: post.content,
-                image: profile.avatar_url,
                 timestamp: post.created_at,
                 user_id: post.user_id,
-                username: profile.username,
               });
             });
           }

@@ -40,7 +40,7 @@ export default function SearchResults() {
       try {
         // Use the optimized search function
         const { data: searchData, error: searchError } = await supabase
-          .rpc('search_all', { query: query })
+          .rpc('search_all', { search_term: query })
           .limit(50);
 
         if (!searchError && searchData) {

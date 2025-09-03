@@ -73,7 +73,7 @@ export default function ProfileEdit({ profile, onClose }: ProfileEditProps) {
         // Check if the bio column exists by trying to update it
         const { error: testError } = await supabase
           .from("profiles")
-          .update({ bio: formData.bio })
+          .update({ full_name: formData.full_name })
           .eq("id", profile.id)
           .limit(0); // Don't actually update, just test
 

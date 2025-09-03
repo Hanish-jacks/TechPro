@@ -35,22 +35,8 @@ import ProfileEdit from "@/components/profile/ProfileEdit";
 
 interface ProfileData {
   id: string;
-  username: string;
-  full_name: string;
-  avatar_url: string;
-  bio?: string;
-  location?: string;
-  website?: string;
-  company?: string;
-  job_title?: string;
-  skills?: string[];
-  education?: string;
-  experience?: string;
-  social_links?: any;
-  profile_cover_url?: string;
-  is_public?: boolean;
-  created_at: string;
-  updated_at?: string;
+  full_name: string | null;
+  created_at: string | null;
   post_count?: number;
   follower_count?: number;
   following_count?: number;
@@ -98,15 +84,8 @@ export default function Profile() {
         if (error) throw error;
         profileData = data;
       } else {
-        // Get profile by username
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("username", profileUsername)
-          .single();
-
-        if (error) throw error;
-        profileData = data;
+        // For now, just redirect to own profile
+        throw new Error("User profiles by username not implemented");
       }
 
       // Get post count
@@ -118,10 +97,15 @@ export default function Profile() {
       // Try to get profile with stats (if the function exists)
       try {
         const { data: profileWithStats, error: statsError } = await supabase
-          .rpc('get_user_profile_with_stats', { user_id_param: profileData.id });
+          .rpc('get_user_profile_with_stats', { user_uuid: profileData.id });
 
         if (!statsError && profileWithStats && profileWithStats.length > 0) {
-          return profileWithStats[0];
+          return {
+            ...profileData,
+            post_count: profileWithStats[0].post_count,
+            follower_count: 0,
+            following_count: 0,
+          };
         }
       } catch (error) {
         console.log("Profile stats function not available, using basic profile");
@@ -131,20 +115,8 @@ export default function Profile() {
       return {
         ...profileData,
         post_count: postCount || 0,
-        follower_count: 0, // Will be implemented later
-        following_count: 0, // Will be implemented later
-        bio: profileData.bio || "",
-        location: profileData.location || "",
-        website: profileData.website || "",
-        company: profileData.company || "",
-        job_title: profileData.job_title || "",
-        skills: profileData.skills || [],
-        education: profileData.education || "",
-        experience: profileData.experience || "",
-        social_links: profileData.social_links || {},
-        profile_cover_url: profileData.profile_cover_url || "",
-        is_public: profileData.is_public !== false, // Default to true
-        updated_at: profileData.updated_at || profileData.created_at,
+        follower_count: 0,
+        following_count: 0,
       };
     },
     enabled: !!profileUsername,
@@ -245,7 +217,7 @@ export default function Profile() {
   }
 
   const isOwnProfile = currentUser?.id === profile.id;
-  const initials = profile.full_name?.slice(0, 2).toUpperCase() || profile.username.slice(0, 2).toUpperCase();
+  const initials = profile.full_name?.slice(0, 2).toUpperCase() || "U";
 
   return (
     <div className="min-h-screen bg-gradient-background">
@@ -265,23 +237,6 @@ export default function Profile() {
           <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card mb-6 overflow-hidden">
             {/* Cover Image */}
             <div className="h-48 bg-gradient-to-r from-primary/20 to-secondary/20 relative">
-              {profile.profile_cover_url && (
-                <img
-                  src={profile.profile_cover_url}
-                  alt="Profile cover"
-                  className="w-full h-full object-cover"
-                />
-              )}
-              {isOwnProfile && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute top-4 right-4"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Cover
-                </Button>
-              )}
             </div>
 
             {/* Profile Info */}
@@ -290,62 +245,19 @@ export default function Profile() {
                 {/* Avatar and Basic Info */}
                 <div className="flex items-start gap-4">
                   <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
-                    {profile.avatar_url ? (
-                      <img src={profile.avatar_url} alt={profile.full_name || profile.username} />
-                    ) : (
-                      <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
-                    )}
+                    <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h1 className="text-3xl font-bold mb-2">
-                          {profile.full_name || profile.username}
+                          {profile.full_name || "User"}
                         </h1>
-                        <p className="text-muted-foreground mb-2">
-                          @{profile.username}
-                        </p>
-                        {profile.job_title && profile.company && (
-                          <p className="text-lg mb-2">
-                            {profile.job_title} at {profile.company}
-                          </p>
-                        )}
-                        {profile.location && (
-                          <p className="text-muted-foreground flex items-center gap-1 mb-2">
-                            <MapPin className="h-4 w-4" />
-                            {profile.location}
-                          </p>
-                        )}
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        {isOwnProfile ? (
-                          <ProfileEdit 
-                            profile={profile} 
-                            onClose={() => {
-                              // Profile will be refreshed automatically via query invalidation
-                            }}
-                          />
-                        ) : (
-                          <Button
-                            variant={followStatus ? "outline" : "default"}
-                            onClick={() => followMutation.mutate(!followStatus)}
-                            disabled={followMutation.isPending}
-                          >
-                            {followStatus ? (
-                              <>
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Following
-                              </>
-                            ) : (
-                              <>
-                                <UserPlus className="h-4 w-4 mr-2" />
-                                Follow
-                              </>
-                            )}
-                          </Button>
-                        )}
+                        {/* Profile actions will be added later */}
                       </div>
                     </div>
 
@@ -365,40 +277,6 @@ export default function Profile() {
                       </div>
                     </div>
 
-                    {/* Bio */}
-                    {profile.bio && (
-                      <p className="text-muted-foreground mb-4">{profile.bio}</p>
-                    )}
-
-                    {/* Links */}
-                    <div className="flex items-center gap-4">
-                      {profile.website && (
-                        <a
-                          href={profile.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-primary hover:underline"
-                        >
-                          <Globe className="h-4 w-4" />
-                          Website
-                        </a>
-                      )}
-                      {profile.social_links && Object.keys(profile.social_links).length > 0 && (
-                        <div className="flex items-center gap-2">
-                          {Object.entries(profile.social_links).map(([platform, url]) => (
-                            <a
-                              key={platform}
-                              href={url as string}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              <Link className="h-4 w-4" />
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </div>
               </div>
@@ -415,44 +293,15 @@ export default function Profile() {
                   <CardTitle>About</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {profile.education && (
-                    <div>
-                      <h4 className="font-medium mb-2">Education</h4>
-                      <p className="text-sm text-muted-foreground">{profile.education}</p>
-                    </div>
-                  )}
-                  {profile.experience && (
-                    <div>
-                      <h4 className="font-medium mb-2">Experience</h4>
-                      <p className="text-sm text-muted-foreground">{profile.experience}</p>
-                    </div>
-                  )}
                   <div>
                     <h4 className="font-medium mb-2">Member since</h4>
                     <p className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(profile.created_at), { addSuffix: true })}
+                      {profile.created_at ? formatDistanceToNow(new Date(profile.created_at), { addSuffix: true }) : "Recently"}
                     </p>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Skills */}
-              {profile.skills && profile.skills.length > 0 && (
-                <Card className="bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
-                  <CardHeader>
-                    <CardTitle>Skills</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
 
             {/* Main Content */}

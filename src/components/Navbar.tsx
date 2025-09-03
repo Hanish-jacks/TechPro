@@ -38,14 +38,14 @@ const Navbar = () => {
       
       const { data } = await supabase
         .from('profiles')
-        .select('id, username, full_name, avatar_url, bio, job_title, created_at')
+        .select('id, full_name, created_at')
         .eq('id', user.id)
         .single();
       
       return {
-        ...(data || {}),
-        email: user.email,
         id: user.id,
+        full_name: data?.full_name || null,
+        email: user.email,
         created_at: user.created_at
       };
     },
@@ -174,13 +174,12 @@ const Navbar = () => {
                 className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
               >
                 <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
-                  <AvatarImage src={profile?.avatar_url} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                    {profile?.full_name?.charAt(0) || profile?.username?.charAt(0) || 'U'}
+                    {profile?.full_name?.charAt(0) || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden lg:flex items-center">
-                  <span className="text-sm font-medium">{profile?.full_name || profile?.username || 'User'}</span>
+                  <span className="text-sm font-medium">{profile?.full_name || 'User'}</span>
                   <ChevronDown className={`w-4 h-4 ml-1 transition-transform duration-200 ${showProfileDropdown ? 'rotate-180' : ''}`} />
                 </div>
               </button>
@@ -295,14 +294,13 @@ const Navbar = () => {
             <div className="border-t border-border pt-3 mt-3">
               <div className="flex items-center space-x-3 px-3 py-2">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={profile?.avatar_url} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                    {profile?.full_name?.charAt(0) || profile?.username?.charAt(0) || 'U'}
+                    {profile?.full_name?.charAt(0) || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-foreground">
-                    {profile?.full_name || profile?.username || 'User'}
+                    {profile?.full_name || 'User'}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {profile?.email}

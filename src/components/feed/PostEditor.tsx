@@ -179,7 +179,7 @@ export default function PostEditor({ post, userId, onCancel }: PostEditorProps) 
           <ImageGridPreview
             images={previews}
             onRemove={removeImage}
-            onOpenViewer={openImageViewer}
+            onOpenViewer={(index) => openImageViewer(previews, index)}
           />
         )}
 

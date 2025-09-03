@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ImageGrid } from "./image-grid";
-import { ImageViewer } from "./image-viewer";
+import ImageGrid from "./image-grid";
+import ImageViewer from "./image-viewer";
 
 // Sample images for demonstration
 const sampleImages = [
