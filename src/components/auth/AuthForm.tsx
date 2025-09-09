@@ -8,7 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Mail, Lock, User, Upload, X } from "lucide-react";
 import SocialAuth from "@/components/auth/SocialAuth";
+import ForgotPassword from "@/components/auth/ForgotPassword";
 import { useToast } from "@/hooks/use-toast";
+
 
 interface AuthFormProps {
   mode: "login" | "signup";
@@ -22,6 +24,7 @@ export default function AuthForm({ mode, onToggleMode }: AuthFormProps) {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -236,28 +239,32 @@ export default function AuthForm({ mode, onToggleMode }: AuthFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-md bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
-      <CardHeader className="space-y-2 text-center">
-        <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-          {mode === "login" ? "Welcome back" : "Create account"}
-        </CardTitle>
-        <CardDescription className="text-muted-foreground">
-          {mode === "login" 
-            ? "Enter your credentials to sign in" 
-            : "Enter your details to create a new account"
-          }
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <SocialAuth />
-          <div className="flex items-center gap-2">
-            <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">or continue with email</span>
-            <Separator className="flex-1" />
-          </div>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <>
+      {showForgotPassword ? (
+        <ForgotPassword onBack={() => setShowForgotPassword(false)} />
+      ) : (
+        <Card className="w-full max-w-md bg-card/50 backdrop-blur-xl border-border/50 shadow-card">
+          <CardHeader className="space-y-2 text-center">
+            <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              {mode === "login" ? "Welcome back" : "Create account"}
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              {mode === "login" 
+                ? "Enter your credentials to sign in" 
+                : "Enter your details to create a new account"
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <SocialAuth />
+              <div className="flex items-center gap-2">
+                <Separator className="flex-1" />
+                <span className="text-xs text-muted-foreground">or continue with email</span>
+                <Separator className="flex-1" />
+              </div>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "signup" && (
             <>
               {/* Username Field */}
@@ -350,9 +357,21 @@ export default function AuthForm({ mode, onToggleMode }: AuthFormProps) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium text-foreground">
-              Password
-            </Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                Password
+              </Label>
+              {mode === "login" && (
+                <Button
+                  type="button"
+                  variant="link"
+                  className="p-0 h-auto text-xs text-primary hover:text-primary/80"
+                  onClick={() => setShowForgotPassword(true)}
+                >
+                  Forgot password?
+                </Button>
+              )}
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -391,5 +410,7 @@ export default function AuthForm({ mode, onToggleMode }: AuthFormProps) {
         </div>
       </CardContent>
     </Card>
+    )}
+    </>
   );
 }

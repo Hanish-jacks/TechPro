@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AuthForm from "@/components/auth/AuthForm";
+import ForgotPassword from "@/components/auth/ForgotPassword";
 import { User, Session } from "@supabase/supabase-js";
 
 export default function Auth() {
