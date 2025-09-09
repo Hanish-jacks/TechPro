@@ -10,7 +10,7 @@ import PostComposer from "@/components/feed/PostComposer";
 import PostList from "@/components/feed/PostList";
 import ChatDrawer from "@/components/chat/ChatDrawer";
 import SearchBar from "@/components/search/SearchBar";
-import MessagingHub from "@/components/messaging/MessagingHub";
+import MessagingInterface from "@/components/messaging/MessagingInterface";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -173,8 +173,8 @@ const Index = () => {
             <PostList />
           </div>
 
-          {/* Real-time Messaging Hub */}
-          <MessagingHub currentUserId={user.id} />
+          {/* Real-time Messaging */}
+          <MessagingInterface user={user} />
           
           {/* Floating Chat */}
           <ChatDrawer />
