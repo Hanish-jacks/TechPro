@@ -7,13 +7,104 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
+      conversation_participants: {
+        Row: {
+          conversation_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          message_type: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_comments: {
         Row: {
           content: string
@@ -85,16 +176,17 @@ export type Database = {
           id: string
           image_url: string | null
           image_urls: Json | null
-          video_url: string | null
-          video_thumbnail_url: string | null
-          video_duration: number | null
-          video_size: number | null
-          pdf_url: string | null
           pdf_filename: string | null
-          pdf_size: number | null
           pdf_pages: number | null
+          pdf_size: number | null
+          pdf_url: string | null
           updated_at: string
           user_id: string
+          video_duration: number | null
+          video_size: number | null
+          video_thumbnail_url: string | null
+          video_url: string | null
+          video_urls: string[] | null
         }
         Insert: {
           content: string
@@ -102,16 +194,17 @@ export type Database = {
           id?: string
           image_url?: string | null
           image_urls?: Json | null
-          video_url?: string | null
-          video_thumbnail_url?: string | null
-          video_duration?: number | null
-          video_size?: number | null
-          pdf_url?: string | null
           pdf_filename?: string | null
-          pdf_size?: number | null
           pdf_pages?: number | null
+          pdf_size?: number | null
+          pdf_url?: string | null
           updated_at?: string
           user_id: string
+          video_duration?: number | null
+          video_size?: number | null
+          video_thumbnail_url?: string | null
+          video_url?: string | null
+          video_urls?: string[] | null
         }
         Update: {
           content?: string
@@ -119,16 +212,17 @@ export type Database = {
           id?: string
           image_url?: string | null
           image_urls?: Json | null
-          video_url?: string | null
-          video_thumbnail_url?: string | null
-          video_duration?: number | null
-          video_size?: number | null
-          pdf_url?: string | null
           pdf_filename?: string | null
-          pdf_size?: number | null
           pdf_pages?: number | null
+          pdf_size?: number | null
+          pdf_url?: string | null
           updated_at?: string
           user_id?: string
+          video_duration?: number | null
+          video_size?: number | null
+          video_thumbnail_url?: string | null
+          video_url?: string | null
+          video_urls?: string[] | null
         }
         Relationships: []
       }
@@ -162,6 +256,27 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      user_presence: {
+        Row: {
+          last_seen: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          last_seen?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          last_seen?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -199,12 +314,16 @@ export type Database = {
       }
     }
     Functions: {
+      get_or_create_direct_conversation: {
+        Args: { other_user_id: string }
+        Returns: string
+      }
       get_user_profile_with_stats: {
         Args: { user_uuid: string }
         Returns: {
-          id: string
-          full_name: string
           created_at: string
+          full_name: string
+          id: string
           post_count: number
           total_likes: number
         }[]
@@ -212,11 +331,11 @@ export type Database = {
       search_all: {
         Args: { search_term: string }
         Returns: {
-          post_id: string
           content: string
-          user_id: string
           created_at: string
+          post_id: string
           relevance: number
+          user_id: string
         }[]
       }
     }
