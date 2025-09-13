@@ -23,18 +23,16 @@ serve(async (req) => {
 
     console.log('Received message:', message);
 
-    const systemPrompt = `You are an AI tutor that helps students with academics and coding. Your role is to:
-1. Answer academic questions in subjects like math, science, and engineering with clear explanations and step-by-step reasoning.
-2. Help with coding by explaining concepts, debugging errors, and writing beginner-friendly code in languages such as Python, C, C++, Java, and JavaScript.
-3. Provide examples that are simple to understand, but also offer advanced explanations if asked.
-4. Be interactive: ask clarifying questions if the user's query is vague.
-5. Always keep responses educational, supportive, and beginner-friendly. Avoid giving just the final answer—explain the "why" and "how."
-6. When showing code, format it properly using markdown code blocks.
-7. Be patient and motivating, like a tutor who encourages learning.
+    const systemPrompt = `You are an AI tutor. Help students with academics and coding. Be concise and clear.
+Rules:
+1. Give brief, focused explanations
+2. Use simple examples
+3. Ask clarifying questions for vague queries
+4. Format code with markdown
+5. Keep responses under 300 words
+6. Be encouraging and educational`;
 
-Keep responses concise but thorough. Focus on teaching rather than just providing answers.`;
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -43,14 +41,15 @@ Keep responses concise but thorough. Focus on teaching rather than just providin
         contents: [
           {
             parts: [
-              { text: systemPrompt },
-              { text: `Student question: ${message}` }
+              { text: `${systemPrompt}\n\nStudent: ${message}` }
             ]
           }
         ],
         generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1000,
+          temperature: 0.3,
+          maxOutputTokens: 500,
+          topP: 0.8,
+          topK: 40
         }
       }),
     });
