@@ -25,22 +25,11 @@ export default function AiTutorChat() {
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      if (scrollAreaRef.current) {
-        const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-        if (scrollContainer) {
-          scrollContainer.scrollTop = scrollContainer.scrollHeight;
-        }
-      }
-    }, 100);
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const sendMessage = async () => {
@@ -133,7 +122,7 @@ export default function AiTutorChat() {
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col gap-4 p-4">
-        <ScrollArea ref={scrollAreaRef} className="flex-1 pr-4">
+        <ScrollArea className="flex-1 pr-4">
           <div className="space-y-4">
             {messages.map((message) => (
               <div
@@ -182,6 +171,7 @@ export default function AiTutorChat() {
                 </div>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
         
