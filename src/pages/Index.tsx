@@ -11,8 +11,6 @@ import PostList from "@/components/feed/PostList";
 import ChatDrawer from "@/components/chat/ChatDrawer";
 import SearchBar from "@/components/search/SearchBar";
 import MessagingInterface from "@/components/messaging/MessagingInterface";
-import AiTutorChat from "@/components/ai-tutor/AiTutorChat";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -169,29 +167,11 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Dashboard Content with Tabs */}
-          <Tabs defaultValue="feed" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="feed">Social Feed</TabsTrigger>
-              <TabsTrigger value="tutor">AI Tutor</TabsTrigger>
-              <TabsTrigger value="messages">Messages</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="feed">
-              <div className="max-w-2xl mx-auto">
-                <PostComposer userId={user.id} />
-                <PostList />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="tutor">
-              <AiTutorChat />
-            </TabsContent>
-            
-            <TabsContent value="messages">
-              <MessagingInterface user={user} />
-            </TabsContent>
-          </Tabs>
+          {/* Dashboard Content - Social Feed */}
+          <div className="max-w-2xl mx-auto">
+            <PostComposer userId={user.id} />
+            <PostList />
+          </div>
           
           {/* Floating Chat */}
           <ChatDrawer />

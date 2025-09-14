@@ -81,7 +81,7 @@ const Navbar = () => {
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
     { icon: Users, label: 'Network', path: '/network' },
-    { icon: MessageCircle, label: 'Messages', path: '/messaging' },
+    { icon: Brain, label: 'AI Tutor', path: '#', isAiTutor: true },
     { icon: Bell, label: 'Notifications', path: '/notifications', hasNotification: true },
   ];
 
@@ -137,6 +137,28 @@ const Navbar = () => {
           <div className="hidden sm:flex items-center space-x-1 sm:space-x-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
+              
+              if (item.isAiTutor) {
+                return (
+                  <Dialog key={item.label} open={showAiTutor} onOpenChange={setShowAiTutor}>
+                    <DialogTrigger asChild>
+                      <button className="flex flex-col items-center px-2 sm:px-4 py-2 sm:py-3 rounded-lg transition-all duration-200 group relative min-w-[50px] sm:min-w-[70px] text-muted-foreground hover:text-foreground hover:bg-accent">
+                        <div className="relative mb-0.5 sm:mb-1">
+                          <item.icon className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
+                        </div>
+                        <span className="text-xs font-medium text-center hidden sm:block">{item.label}</span>
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-5xl w-[95vw] h-[80vh] p-0">
+                      <DialogHeader className="sr-only">
+                        <DialogTitle>AI Tutor</DialogTitle>
+                      </DialogHeader>
+                      <AiTutorChat />
+                    </DialogContent>
+                  </Dialog>
+                );
+              }
+              
               return (
                 <Link
                   key={item.label}
@@ -157,24 +179,6 @@ const Navbar = () => {
                 </Link>
               );
             })}
-            
-            {/* AI Tutor Button */}
-            <Dialog open={showAiTutor} onOpenChange={setShowAiTutor}>
-              <DialogTrigger asChild>
-                <button className="flex flex-col items-center px-2 sm:px-4 py-2 sm:py-3 rounded-lg transition-all duration-200 group relative min-w-[50px] sm:min-w-[70px] text-muted-foreground hover:text-foreground hover:bg-accent">
-                  <div className="relative mb-0.5 sm:mb-1">
-                    <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
-                  </div>
-                  <span className="text-xs font-medium text-center hidden sm:block">AI Tutor</span>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="max-w-5xl w-[95vw] h-[80vh] p-0">
-                <DialogHeader className="sr-only">
-                  <DialogTitle>AI Tutor</DialogTitle>
-                </DialogHeader>
-                <AiTutorChat />
-              </DialogContent>
-            </Dialog>
           </div>
 
           {/* Mobile Menu Button */}
@@ -290,6 +294,29 @@ const Navbar = () => {
             {/* Mobile Navigation Items */}
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
+              
+              if (item.isAiTutor) {
+                return (
+                  <Dialog key={item.label} open={showAiTutor} onOpenChange={setShowAiTutor}>
+                    <DialogTrigger asChild>
+                      <button
+                        className="flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent w-full text-left"
+                        onClick={() => setShowMobileMenu(false)}
+                      >
+                        <item.icon className="w-5 h-5 text-purple-500" />
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-5xl w-[95vw] h-[80vh] p-0">
+                      <DialogHeader className="sr-only">
+                        <DialogTitle>AI Tutor</DialogTitle>
+                      </DialogHeader>
+                      <AiTutorChat />
+                    </DialogContent>
+                  </Dialog>
+                );
+              }
+              
               return (
                 <Link
                   key={item.label}
@@ -311,25 +338,6 @@ const Navbar = () => {
                 </Link>
               );
             })}
-            
-            {/* Mobile AI Tutor Button */}
-            <Dialog open={showAiTutor} onOpenChange={setShowAiTutor}>
-              <DialogTrigger asChild>
-                <button
-                  className="flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent w-full text-left"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  <Brain className="w-5 h-5 text-purple-500" />
-                  <span className="text-sm font-medium">AI Tutor</span>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="max-w-5xl w-[95vw] h-[80vh] p-0">
-                <DialogHeader className="sr-only">
-                  <DialogTitle>AI Tutor</DialogTitle>
-                </DialogHeader>
-                <AiTutorChat />
-              </DialogContent>
-            </Dialog>
             
             {/* Mobile Profile Section */}
             <div className="border-t border-border pt-3 mt-3">
