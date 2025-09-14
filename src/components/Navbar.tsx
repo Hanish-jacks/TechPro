@@ -13,17 +13,21 @@ import {
   LogOut,
   Rocket,
   Menu,
-  X
+  X,
+  Brain
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import AiTutorChat from '@/components/ai-tutor/AiTutorChat';
 
 const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showBusinessDropdown, setShowBusinessDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showAiTutor, setShowAiTutor] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -153,6 +157,24 @@ const Navbar = () => {
                 </Link>
               );
             })}
+            
+            {/* AI Tutor Button */}
+            <Dialog open={showAiTutor} onOpenChange={setShowAiTutor}>
+              <DialogTrigger asChild>
+                <button className="flex flex-col items-center px-2 sm:px-4 py-2 sm:py-3 rounded-lg transition-all duration-200 group relative min-w-[50px] sm:min-w-[70px] text-muted-foreground hover:text-foreground hover:bg-accent">
+                  <div className="relative mb-0.5 sm:mb-1">
+                    <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
+                  </div>
+                  <span className="text-xs font-medium text-center hidden sm:block">AI Tutor</span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-5xl w-[95vw] h-[80vh] p-0">
+                <DialogHeader className="sr-only">
+                  <DialogTitle>AI Tutor</DialogTitle>
+                </DialogHeader>
+                <AiTutorChat />
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Mobile Menu Button */}
@@ -289,6 +311,25 @@ const Navbar = () => {
                 </Link>
               );
             })}
+            
+            {/* Mobile AI Tutor Button */}
+            <Dialog open={showAiTutor} onOpenChange={setShowAiTutor}>
+              <DialogTrigger asChild>
+                <button
+                  className="flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent w-full text-left"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <Brain className="w-5 h-5 text-purple-500" />
+                  <span className="text-sm font-medium">AI Tutor</span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-5xl w-[95vw] h-[80vh] p-0">
+                <DialogHeader className="sr-only">
+                  <DialogTitle>AI Tutor</DialogTitle>
+                </DialogHeader>
+                <AiTutorChat />
+              </DialogContent>
+            </Dialog>
             
             {/* Mobile Profile Section */}
             <div className="border-t border-border pt-3 mt-3">
