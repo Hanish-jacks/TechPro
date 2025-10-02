@@ -80,7 +80,7 @@ const Navbar = () => {
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
-    { icon: Users, label: 'Network', path: '/network' },
+    { icon: Users, label: 'Network', path: '/connections' },
     { icon: Brain, label: 'AI Tutor', path: '#', isAiTutor: true },
     { icon: Bell, label: 'Notifications', path: '/notifications', hasNotification: true },
   ];

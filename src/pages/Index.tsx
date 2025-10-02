@@ -11,6 +11,8 @@ import PostList from "@/components/feed/PostList";
 import ChatDrawer from "@/components/chat/ChatDrawer";
 import SearchBar from "@/components/search/SearchBar";
 import MessagingInterface from "@/components/messaging/MessagingInterface";
+import ProfileSidebar from "@/components/home/ProfileSidebar";
+import RightSidebar from "@/components/home/RightSidebar";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -159,24 +161,51 @@ const Index = () => {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
       
       <div className="relative z-10 container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <p className="text-muted-foreground text-center">
-              Welcome back, {user.email}
-            </p>
-          </div>
+        {/* 3-Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto">
+          {/* Left Sidebar */}
+          <aside className="lg:col-span-3 space-y-4">
+            <ProfileSidebar userId={user.id} />
+            
+            {/* Quick Links */}
+            <Card className="bg-card/50 backdrop-blur-xl border-border/50">
+              <CardContent className="p-4 space-y-2">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                  onClick={() => navigate("/connections")}
+                >
+                  My Network
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start"
+                  onClick={() => navigate(`/profile/${user.id}`)}
+                >
+                  My Profile
+                </Button>
+              </CardContent>
+            </Card>
+          </aside>
 
-          {/* Dashboard Content - Social Feed */}
-          <div className="max-w-2xl mx-auto">
+          {/* Center Feed */}
+          <main className="lg:col-span-6 space-y-4">
             <PostComposer userId={user.id} />
             <PostList />
-          </div>
-          
-          {/* Floating Chat */}
-          <ChatDrawer />
+          </main>
+
+          {/* Right Sidebar */}
+          <aside className="lg:col-span-3">
+            <RightSidebar userId={user.id} />
+          </aside>
         </div>
       </div>
+      
+      {/* Floating Chat */}
+      <ChatDrawer />
+      
+      {/* Messaging Interface */}
+      <MessagingInterface user={user} />
     </div>
   );
 };
