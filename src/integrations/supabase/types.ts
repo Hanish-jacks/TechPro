@@ -241,23 +241,201 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
+      profile_education: {
         Row: {
           created_at: string | null
-          full_name: string | null
+          degree: string | null
+          description: string | null
+          end_date: string | null
+          field_of_study: string | null
+          grade: string | null
           id: string
+          school: string
+          start_date: string | null
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
-          full_name?: string | null
-          id: string
+          degree?: string | null
+          description?: string | null
+          end_date?: string | null
+          field_of_study?: string | null
+          grade?: string | null
+          id?: string
+          school: string
+          start_date?: string | null
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
-          full_name?: string | null
+          degree?: string | null
+          description?: string | null
+          end_date?: string | null
+          field_of_study?: string | null
+          grade?: string | null
           id?: string
+          school?: string
+          start_date?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_education_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_experience: {
+        Row: {
+          company: string
+          created_at: string | null
+          description: string | null
+          employment_type: string | null
+          end_date: string | null
+          id: string
+          is_current: boolean | null
+          location: string | null
+          start_date: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company: string
+          created_at?: string | null
+          description?: string | null
+          employment_type?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          location?: string | null
+          start_date: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company?: string
+          created_at?: string | null
+          description?: string | null
+          employment_type?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          location?: string | null
+          start_date?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_experience_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          company: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          full_name: string | null
+          headline: string | null
+          id: string
+          job_title: string | null
+          location: string | null
+          skills: Json | null
+          updated_at: string | null
+          username: string | null
+          website: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          headline?: string | null
+          id: string
+          job_title?: string | null
+          location?: string | null
+          skills?: Json | null
+          updated_at?: string | null
+          username?: string | null
+          website?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          company?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          headline?: string | null
+          id?: string
+          job_title?: string | null
+          location?: string | null
+          skills?: Json | null
+          updated_at?: string | null
+          username?: string | null
+          website?: string | null
         }
         Relationships: []
+      }
+      user_connections: {
+        Row: {
+          addressee_id: string
+          created_at: string | null
+          id: string
+          requester_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string | null
+          id?: string
+          requester_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string | null
+          id?: string
+          requester_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_connections_addressee_id_fkey"
+            columns: ["addressee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_connections_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_presence: {
         Row: {
@@ -314,6 +492,13 @@ export type Database = {
       }
     }
     Functions: {
+      get_connection_stats: {
+        Args: { user_uuid: string }
+        Returns: {
+          connections_count: number
+          pending_requests_count: number
+        }[]
+      }
       get_or_create_direct_conversation: {
         Args: { other_user_id: string }
         Returns: string
